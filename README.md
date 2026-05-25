@@ -82,26 +82,37 @@ VelaPDF follows the **MVVM (Model-View-ViewModel)** architecture pattern with cl
 
 ---
 
-## ⚡ Getting Started
+## ⚡ Getting Started (Tutorial untuk Pemula)
 
-### 1. Clone the repository
+Ikuti langkah-langkah di bawah ini untuk mengunduh dan menjalankan project ini di komputermu, terutama jika kamu masih pemula:
+
+### Langkah 1: Persiapan (Prerequisites)
+Pastikan hal-hal berikut sudah ter-install di komputermu:
+1. **Git**: Unduh dan install dari [git-scm.com](https://git-scm.com/).
+2. **Android Studio**: Unduh dan install Android Studio versi terbaru dari [developer.android.com/studio](https://developer.android.com/studio).
+
+### Langkah 2: Clone (Unduh) Repository
+Buka terminal (Command Prompt/PowerShell/Git Bash di Windows, atau Terminal di Mac/Linux), lalu jalankan perintah berikut secara berurutan:
 
 ```bash
+# 1. Unduh kode dari GitHub
 git clone https://github.com/useripx/velapdf.git
+
+# 2. Masuk ke folder project
 cd velapdf
 ```
 
-### 2. Open in Android Studio
+### Langkah 3: Buka Project di Android Studio
+1. Buka aplikasi **Android Studio**.
+2. Pada layar utama (Welcome to Android Studio), klik menu **Open** (atau "Open an Existing Project").
+3. Cari dan pilih folder `velapdf` hasil clone tadi, lalu klik **OK**.
+4. **Tunggu (Penting):** Android Studio akan mulai melakukan proses *Gradle Sync* dan mendownload semua hal yang dibutuhkan (library, dependencies, dll). Tunggu sampai ada tulisan "Sync System Completed" dan tidak ada loading bar di pojok kanan bawah. Pastikan internetmu aktif dan stabil.
 
-Open the project in Android Studio and let Gradle sync.
-
-### 3. Build & Run
-
-```bash
-./gradlew assembleDebug
-```
-
-Or press **▶ Run** in Android Studio.
+### Langkah 4: Jalankan Aplikasi
+1. Colokkan HP Android ke laptop/PC (pastikan mode *Developer Options* & *USB Debugging* di HP sudah aktif) **ATAU** jalankan Emulator bawaan dari Android Studio.
+2. Di pojok atas Android Studio, pastikan nama modulnya terpilih sebagai `app` dan target devicenya sudah muncul.
+3. Klik tombol **Play (▶️ Run 'app')** berwarna hijau di panel atas (shortcut `Shift + F10`).
+4. Tunggu proses build selesai (bisa memakan waktu beberapa menit saat pertama kali), dan aplikasi akan otomatis terbuka di HP/Emulator.
 
 ---
 
