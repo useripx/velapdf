@@ -162,6 +162,8 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 **useripx** — [GitHub](https://github.com/useripx) <br>
 **zenoszaiys** —  
 [Github](https://github.com/zenoszaiys)
+**giovan97**  — 
+[Github](https://github.com/giovan97)
 
 ---
 
