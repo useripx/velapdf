@@ -95,7 +95,8 @@ Pastikan hal-hal berikut sudah ter-install di komputermu:
 Buka terminal (Command Prompt/PowerShell/Git Bash di Windows, atau Terminal di Mac/Linux), lalu jalankan perintah berikut secara berurutan:
 
 ```bash
-# 1. Buat Folder Project di C:\Users\Username\AndroidStudioProjects dengan nama Folder VelaPDF
+# 1. Buat Folder Project 
+di C:\Users\Username\AndroidStudioProjects dengan nama Folder VelaPDF
 
 # 2. Unduh kode dari GitHub
 git clone https://github.com/useripx/velapdf.git
