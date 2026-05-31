@@ -48,7 +48,7 @@
 VelaPDF follows the **MVVM (Model-View-ViewModel)** architecture pattern with clean separation of concerns:
 
 ```
-📦 com.velapdf.app
+📦 com.njagakneai.velapdf
 ├── 📂 data/          # Data layer (repositories, data sources, models)
 ├── 📂 di/            # Dependency Injection modules
 ├── 📂 domain/        # Domain layer (use cases, entities)
