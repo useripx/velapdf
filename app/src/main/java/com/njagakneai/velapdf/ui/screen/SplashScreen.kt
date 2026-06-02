@@ -143,7 +143,7 @@ fun SplashScreen(
             Spacer(modifier = Modifier.height(40.dp))
 
             Text(
-                text = "Powered by Kotlin & MVVM",
+                text = "Powered Tim Njagakne AI",
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.alpha(0.4f)

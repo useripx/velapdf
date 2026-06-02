@@ -1,34 +1,43 @@
 package com.njagakneai.velapdf.ui.screen
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.njagakneai.velapdf.R
 import com.njagakneai.velapdf.data.model.SelectedImage
+import com.njagakneai.velapdf.data.repository.PdfGenerationState
+import com.njagakneai.velapdf.data.repository.PdfRepository
+import com.njagakneai.velapdf.ui.components.NotificationData
+import com.njagakneai.velapdf.ui.components.NotificationToast
+import com.njagakneai.velapdf.ui.components.NotificationType
 import com.njagakneai.velapdf.ui.components.SortableImageGrid
 import com.njagakneai.velapdf.utils.FileUriHelper
+import com.njagakneai.velapdf.utils.NotificationHelper
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -36,10 +45,13 @@ import kotlinx.coroutines.withContext
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ImageToPdfScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onConversionSuccess: ((String) -> Unit)? = null
 ) {
     var selectedImages by remember { mutableStateOf(emptyList<SelectedImage>()) }
     var isConverting by remember { mutableStateOf(false) }
+    var conversionProgress by remember { mutableIntStateOf(0) }
+    var toastNotification by remember { mutableStateOf<NotificationData?>(null) }
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -72,203 +84,346 @@ fun ImageToPdfScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "VelaPDF",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontWeight = FontWeight.Bold
-                        ),
-                        color = MaterialTheme.colorScheme.primary
+    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            tempCameraUri?.let { uri ->
+                coroutineScope.launch {
+                    val newSelectedImages = selectedImages.toMutableList()
+                    withContext(Dispatchers.IO) {
+                        val cachedUri = FileUriHelper.copyUriToCache(context, uri)
+                        val fileName = "Camera_${System.currentTimeMillis()}.jpg"
+                        if (cachedUri != null) {
+                            newSelectedImages.add(
+                                SelectedImage(
+                                    originalUri = uri,
+                                    cachedUri = cachedUri,
+                                    fileName = fileName,
+                                    orderIndex = newSelectedImages.size
+                                )
+                            )
+                        }
+                    }
+                    selectedImages = newSelectedImages
+                }
+            }
+        }
+    }
+
+    // Animated progress for smooth visual feedback
+    val animatedProgress by animateFloatAsState(
+        targetValue = conversionProgress.toFloat() / 100f,
+        animationSpec = tween(durationMillis = 300),
+        label = "conversion_progress"
+    )
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = "VelaPDF",
+                            style = MaterialTheme.typography.headlineMedium.copy(
+                                fontWeight = FontWeight.Bold
+                            ),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onNavigateBack, enabled = !isConverting) {
+                            Icon(
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                                contentDescription = "Back",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { /* TODO History */ }) {
+                            Icon(
+                                imageVector = Icons.Default.History,
+                                contentDescription = "History",
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    },
+                    modifier = Modifier.border(
+                        width = 1.dp,
+                        color = MaterialTheme.colorScheme.outlineVariant,
+                        shape = RoundedCornerShape(bottomStart = 0.dp, bottomEnd = 0.dp)
+                    ),
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.surface
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                },
-                actions = {
-                    IconButton(onClick = { /* TODO History */ }) {
-                        Icon(
-                            imageVector = Icons.Default.History,
-                            contentDescription = "History",
-                            tint = MaterialTheme.colorScheme.primary
-                        )
-                    }
-                },
-                modifier = Modifier.border(
-                    width = 1.dp,
-                    color = MaterialTheme.colorScheme.outlineVariant,
-                    shape = RoundedCornerShape(bottomStart = 0.dp, bottomEnd = 0.dp)
-                ),
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface
                 )
-            )
-        },
-        bottomBar = {
-            Surface(
-                color = MaterialTheme.colorScheme.surface.copy(alpha = 0.9f),
-                shadowElevation = 8.dp,
-                modifier = Modifier.fillMaxWidth()
+            },
+            bottomBar = {
+                Surface(
+                    color = MaterialTheme.colorScheme.surface.copy(alpha = 0.95f),
+                    shadowElevation = 8.dp,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                            .navigationBarsPadding()
+                    ) {
+                        // Progress bar visible during conversion
+                        if (isConverting) {
+                            LinearProgressIndicator(
+                                progress = { animatedProgress },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(6.dp)
+                                    .clip(RoundedCornerShape(3.dp)),
+                                color = MaterialTheme.colorScheme.primary,
+                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
+                            )
+                            Spacer(modifier = Modifier.height(10.dp))
+                        }
+
+                        Button(
+                            onClick = {
+                                if (selectedImages.isEmpty() || isConverting) return@Button
+                                isConverting = true
+                                conversionProgress = 0
+
+                                coroutineScope.launch {
+                                    val repository = PdfRepository(context)
+                                    val outputFileName = "VelaPDF_${System.currentTimeMillis()}"
+
+                                    repository.generatePdf(selectedImages, outputFileName)
+                                        .collect { state ->
+                                            when (state) {
+                                                is PdfGenerationState.Loading -> {
+                                                    conversionProgress = state.progress
+                                                }
+
+                                                is PdfGenerationState.Success -> {
+                                                    isConverting = false
+
+                                                    // System notification
+                                                    NotificationHelper.showPdfCompleteNotification(
+                                                        context,
+                                                        "$outputFileName.pdf",
+                                                        state.uri
+                                                    )
+
+                                                    // In-app toast
+                                                    toastNotification = NotificationData(
+                                                        "PDF berhasil dibuat!",
+                                                        NotificationType.Success
+                                                    )
+
+                                                    // Navigate to SuccessScreen
+                                                    onConversionSuccess?.invoke(
+                                                        Uri.encode(state.uri.toString())
+                                                    )
+                                                }
+
+                                                is PdfGenerationState.Error -> {
+                                                    isConverting = false
+                                                    toastNotification = NotificationData(
+                                                        state.exception.message
+                                                            ?: "Gagal mengonversi PDF",
+                                                        NotificationType.Error
+                                                    )
+                                                }
+
+                                                is PdfGenerationState.Idle -> {}
+                                            }
+                                        }
+                                }
+                            },
+                            enabled = selectedImages.isNotEmpty() && !isConverting,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary,
+                                disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
+                                disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                    alpha = 0.5f
+                                )
+                            ),
+                            shape = CircleShape
+                        ) {
+                            if (isConverting) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(22.dp),
+                                    color = MaterialTheme.colorScheme.onPrimary,
+                                    strokeWidth = 2.dp
+                                )
+                                Spacer(modifier = Modifier.width(10.dp))
+                                Text(
+                                    text = "Mengonversi… $conversionProgress%",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                            } else {
+                                Text(
+                                    text = "Convert to PDF",
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(horizontal = 16.dp, vertical = 24.dp)
             ) {
-                Box(modifier = Modifier.padding(16.dp)) {
+                // Hero
+                Text(
+                    text = "Image to PDF",
+                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                    color = MaterialTheme.colorScheme.primary
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Convert your photos, screenshots, and scans into professional PDF documents in seconds.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                // Upload and Camera Buttons area
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 32.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
                     Button(
                         onClick = {
-                            isConverting = true
-                            // Simulate conversion
-                            coroutineScope.launch {
-                                kotlinx.coroutines.delay(2000)
-                                isConverting = false
-                                // TODO Show Success
-                            }
+                            multiplePhotoPickerLauncher.launch(
+                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                            )
                         },
-                        enabled = selectedImages.isNotEmpty() && !isConverting,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(56.dp),
+                        enabled = !isConverting,
+                        modifier = Modifier.height(56.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant,
-                            disabledContentColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                            contentColor = MaterialTheme.colorScheme.onPrimary
                         ),
                         shape = CircleShape
                     ) {
-                        if (isConverting) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.size(24.dp),
-                                color = MaterialTheme.colorScheme.onPrimary,
-                                strokeWidth = 2.dp
+                        Icon(imageVector = Icons.Default.Image, contentDescription = "Upload Image")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Upload Image",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Button(
+                        onClick = {
+                            val uri = FileUriHelper.getTempCameraUri(context)
+                            tempCameraUri = uri
+                            cameraLauncher.launch(uri)
+                        },
+                        enabled = !isConverting,
+                        modifier = Modifier.height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary,
+                            contentColor = MaterialTheme.colorScheme.onSecondary
+                        ),
+                        shape = CircleShape
+                    ) {
+                        Icon(imageVector = Icons.Default.CameraAlt, contentDescription = "Kamera")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Kamera",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
+                }
+
+                // Preview Area or Empty State
+                if (selectedImages.isNotEmpty()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "SELECTED PREVIEW",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        Text(
+                            text = "Remove all",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.labelMedium,
+                            modifier = Modifier.clickable(enabled = !isConverting) {
+                                selectedImages = emptyList()
+                            }
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Box(modifier = Modifier.weight(1f)) {
+                        SortableImageGrid(
+                            selectedImages = selectedImages,
+                            onImagesUpdated = { newImages -> selectedImages = newImages }
+                        )
+                    }
+                } else {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(MaterialTheme.colorScheme.surfaceContainerLow)
+                                .border(
+                                    1.dp,
+                                    MaterialTheme.colorScheme.outlineVariant,
+                                    RoundedCornerShape(16.dp)
+                                )
+                                .padding(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Warning,
+                                contentDescription = "Empty",
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.outline
                             )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(text = "Sedang mengonversi...", fontSize = 16.sp)
-                        } else {
+                            Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "Convert to PDF",
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.SemiBold
+                                text = "No image selected for conversion",
+                                color = MaterialTheme.colorScheme.outline,
+                                style = MaterialTheme.typography.bodyMedium,
+                                textAlign = TextAlign.Center
                             )
                         }
                     }
                 }
             }
         }
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(horizontal = 16.dp, vertical = 24.dp)
-        ) {
-            // Hero
-            Text(
-                text = "Image to PDF",
-                style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                color = MaterialTheme.colorScheme.primary
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Convert your photos, screenshots, and scans into professional PDF documents in seconds.",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
 
-            // Upload Button area
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 32.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                Button(
-                    onClick = {
-                        multiplePhotoPickerLauncher.launch(
-                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                        )
-                    },
-                    modifier = Modifier.height(56.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary,
-                        contentColor = MaterialTheme.colorScheme.onPrimary
-                    ),
-                    shape = CircleShape
-                ) {
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Text(
-                        text = "Upload Image",
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium
-                    )
-                    Spacer(modifier = Modifier.width(16.dp))
-                }
-            }
-
-            // Preview Area or Empty State
-            if (selectedImages.isNotEmpty()) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "SELECTED PREVIEW",
-                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = "Remove all",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.labelMedium,
-                        modifier = Modifier.clickable { selectedImages = emptyList() }
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Box(modifier = Modifier.weight(1f)) {
-                    SortableImageGrid(
-                        selectedImages = selectedImages,
-                        onImagesUpdated = { newImages -> selectedImages = newImages }
-                    )
-                }
-            } else {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(MaterialTheme.colorScheme.surfaceContainerLow)
-                            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(16.dp))
-                            .padding(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Warning,
-                            contentDescription = "Empty",
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.outline
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "No image selected for conversion",
-                            color = MaterialTheme.colorScheme.outline,
-                            style = MaterialTheme.typography.bodyMedium,
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                }
-            }
-        }
+        // Notification Toast overlay — pinned to top of screen
+        NotificationToast(
+            notification = toastNotification,
+            onDismiss = { toastNotification = null },
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
     }
 }
