@@ -3,6 +3,7 @@ package com.velapdf.app.ui.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -28,7 +29,10 @@ fun StoragePermissionDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Image(
                     painter = painterResource(id = R.drawable.logo),
                     contentDescription = "App Icon",
