@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -40,6 +41,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.layout.ContentScale
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.njagakneai.velapdf.R
 import com.njagakneai.velapdf.ui.viewmodel.SplashViewModel
@@ -96,7 +98,9 @@ fun SplashScreen(
                 contentDescription = "Vela Logo",
                 modifier = Modifier
                     .size(160.dp)
-                    .scale(scaleAnim)
+                    .clip(RoundedCornerShape(32.dp))
+                    .scale(scaleAnim),
+                contentScale = ContentScale.Crop
             )
 
             Spacer(modifier = Modifier.height(24.dp))

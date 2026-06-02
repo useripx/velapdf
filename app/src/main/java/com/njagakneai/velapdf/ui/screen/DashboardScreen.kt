@@ -92,8 +92,10 @@ fun DashboardScreen(
                         Image(
                             painter = painterResource(id = R.drawable.logo),
                             contentDescription = "App Logo",
-                            modifier = Modifier.size(32.dp).padding(end = 8.dp)
+                            modifier = Modifier.size(32.dp).clip(RoundedCornerShape(8.dp)),
+                            contentScale = ContentScale.Crop
                         )
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "VelaPDF",
                             style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
@@ -309,7 +311,10 @@ fun DashboardScreen(
                     )
                     Spacer(modifier = Modifier.height(24.dp))
                     Button(
-                        onClick = { },
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse("https://sites.google.com/view/velapdf-kebijakan-privasi/privacy-policy"))
+                            context.startActivity(intent)
+                        },
                         colors = ButtonDefaults.buttonColors(
                             containerColor = MaterialTheme.colorScheme.onSecondary,
                             contentColor = MaterialTheme.colorScheme.secondary
@@ -317,7 +322,7 @@ fun DashboardScreen(
                         shape = RoundedCornerShape(8.dp)
                     ) {
                         Text(
-                            text = "Learn About Privacy",
+                            text = "Learn Privacy Policy",
                             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )

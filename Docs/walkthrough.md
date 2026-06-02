@@ -47,4 +47,11 @@ Dokumen ini melacak riwayat pengembangan, integrasi arsitektur, dan perubahan ya
 
 ---
 
-# Tahap 5
+# Tahap 5: Perbaikan Frontend & Dashboard Refactor (Selesai)
+
+- **Redesign Dashboard** (`DashboardScreen.kt`): Mengubah antarmuka secara keseluruhan menggunakan framework Material3. Menjadikan palet warna lebih responsif dan padu. Menyempurnakan rasio ikon TopAppBar dengan `ContentScale`.
+- **Eksternal Link**: Mengubah fungsi tombol _Learn Privacy Policy_ pada Dashboard untuk menautkan halaman _Privacy Policy_ ke URL Google Sites secara dinamis.
+- **Image Conversion Layout** (`ImageToPdfScreen.kt`): Menyajikan tata letak dasar fungsional pratinjau gambar, implementasi tombol aksi PDF lekat (*sticky*), serta kerangka visual manipulasi *Bitmap* sebelum konversi difinalisasikan oleh *Backend-camera-storage*.
+- **Sortable Images Array** (`ui/components/SortableImageGrid.kt`): Penyediaan fungsi visual rotasi, *remove*, dan reorder gambar (dalam antrean proses memori).
+- **Icon Refactoring (Bug Fix)**: Memperbaiki kesalahan *Force Close* aplikasi yang disebabkan oleh pengecualian pe-muatan aset bawaan Android (`IllegalArgumentException`) pada _NavigationBar_ dengan memigrasikannya ke ikon resmi Compose (`androidx.compose.material.icons`). 
+- **Splash Screen Refinement**: Menyesuaikan rasio ikon berlebih pada _SplashScreen.kt_ supaya tepat tertata tanpa pemotongan gambar aneh (_clipping & scale adjust_).
