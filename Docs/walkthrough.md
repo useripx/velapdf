@@ -55,3 +55,55 @@ Dokumen ini melacak riwayat pengembangan, integrasi arsitektur, dan perubahan ya
 - **Sortable Images Array** (`ui/components/SortableImageGrid.kt`): Penyediaan fungsi visual rotasi, *remove*, dan reorder gambar (dalam antrean proses memori).
 - **Icon Refactoring (Bug Fix)**: Memperbaiki kesalahan *Force Close* aplikasi yang disebabkan oleh pengecualian pe-muatan aset bawaan Android (`IllegalArgumentException`) pada _NavigationBar_ dengan memigrasikannya ke ikon resmi Compose (`androidx.compose.material.icons`). 
 - **Splash Screen Refinement**: Menyesuaikan rasio ikon berlebih pada _SplashScreen.kt_ supaya tepat tertata tanpa pemotongan gambar aneh (_clipping & scale adjust_).
+
+---
+
+## Tahap 7: PDF Generation Engine (Backend) (Selesai)
+**Tanggal:** 2 Juni 2026  
+**Branch:** `feature/Backend-pdf-engine`  
+**Task:**
+- Binding State Konversi ke UI Loader (Progress bar 0-100%)
+- PDF Engine Builder (Konversi Bitmap lokal ke Halaman PDF)
+- Menyematkan FileProvider untuk melintasi sistem eksternal URI saat PDF viewer dibuka.
+
+**Endpoint:**
+- `ui/screen/ConverterScreen.kt`
+- `ui/screen/SuccessScreen.kt`
+- `utils/PdfGenerator.kt`
+- `data/repository/PdfRepository.kt`
+- `data/repository/PdfGenerationState.kt`
+
+**Commit:** `feat: add pdf generation engine`
+
+---
+
+## Tahap 7 Hotfix: Koneksi Flow Konversi (Selesai)
+**Tanggal:** 2 Juni 2026  
+**Task:**
+- Memperbaiki tombol "Convert to PDF" yang sebelumnya hanya simulasi delay dan tidak melakukan apa-apa setelah selesai.
+- Menghubungkan `ImageToPdfScreen` → `PdfRepository` → `SuccessScreen` secara end-to-end.
+- Memperbaiki `PdfRepository` dari `flow {}` ke `channelFlow {}` untuk menghindari crash `Flow invariant is violated` saat progress di-emit dari `Dispatchers.IO`.
+- Menambahkan `navigationBarsPadding()` pada bottom bar `ImageToPdfScreen` untuk memperbaiki tombol "Convert to PDF" yang terpotong oleh system navigation bar.
+- Menambahkan animasi progress bar linear + persentase pada tombol konversi.
+
+**Endpoint:**
+- `ui/screen/ImageToPdfScreen.kt` (modifikasi utama)
+- `data/repository/PdfRepository.kt` (fix flow context)
+- `ui/navigation/NavGraph.kt` (add onConversionSuccess callback)
+
+---
+
+## Tahap 8: Local Notification (Frontend) (Selesai)
+**Tanggal:** 2 Juni 2026  
+**Branch:** `feature/frontend-notifications-toast`  
+**Task:**
+- Pengintegrasian Tampilan Banner Notifikasi Aplikasi (In-App Toast)
+- Android NotificationManager Service untuk Notifikasi PDF Selesai
+- Permission `POST_NOTIFICATIONS` untuk Android 13+ (API 33+)
+
+**Endpoint:**
+- `ui/components/NotificationToast.kt` — Komponen banner animasi slide-in dengan tipe Success/Error/Info, auto-dismiss 3.5 detik
+- `utils/NotificationHelper.kt` — Notification Channel + System Notification dengan PendingIntent untuk membuka PDF
+- `AndroidManifest.xml` — Deklarasi permission `POST_NOTIFICATIONS`
+
+**Commit:** `feat: implement local notification`

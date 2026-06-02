@@ -1,5 +1,6 @@
 package com.njagakneai.velapdf.ui.navigation
 
+import android.net.Uri
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
@@ -52,6 +53,42 @@ fun AppNavigation(
             com.njagakneai.velapdf.ui.screen.ImageToPdfScreen(
                 onNavigateBack = {
                     navController.popBackStack()
+                },
+                onConversionSuccess = { encodedUri ->
+                    navController.navigate(Screen.Success.createRoute(encodedUri)) {
+                        popUpTo(Screen.ImageToPdf.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.Converter.route) {
+            // In a real implementation, you'd pass the list of SelectedImages via a shared ViewModel
+            com.njagakneai.velapdf.ui.screen.ConverterScreen(
+                images = emptyList(), // Placeholder
+                outputFileName = "VelaPDF_${System.currentTimeMillis()}",
+                onSuccess = { uriString ->
+                    navController.navigate(Screen.Success.createRoute(Uri.encode(uriString))) {
+                        popUpTo(Screen.Converter.route) { inclusive = true }
+                    }
+                },
+                onError = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = Screen.Success.route,
+            arguments = listOf(androidx.navigation.navArgument("uri") { type = androidx.navigation.NavType.StringType })
+        ) { backStackEntry ->
+            val uri = backStackEntry.arguments?.getString("uri") ?: ""
+            com.njagakneai.velapdf.ui.screen.SuccessScreen(
+                pdfUriString = uri,
+                onBackToDashboard = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
                 }
             )
         }
@@ -63,4 +100,8 @@ sealed class Screen(val route: String) {
     object Permissions : Screen("permissions")
     object Dashboard : Screen("dashboard")
     object ImageToPdf : Screen("image_to_pdf")
+    object Converter : Screen("converter")
+    object Success : Screen("success/{uri}") {
+        fun createRoute(uri: String) = "success/$uri"
+    }
 }
