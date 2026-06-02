@@ -10,7 +10,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -86,7 +87,7 @@ fun ImageToPdfScreen(
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
-                            imageVector = Icons.Default.ArrowBack,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Back",
                             tint = MaterialTheme.colorScheme.primary
                         )
@@ -95,7 +96,7 @@ fun ImageToPdfScreen(
                 actions = {
                     IconButton(onClick = { /* TODO History */ }) {
                         Icon(
-                            painter = painterResource(id = android.R.drawable.ic_menu_recent_history),
+                            imageVector = Icons.Default.History,
                             contentDescription = "History",
                             tint = MaterialTheme.colorScheme.primary
                         )

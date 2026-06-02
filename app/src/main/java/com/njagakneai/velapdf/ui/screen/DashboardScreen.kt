@@ -14,9 +14,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -108,7 +113,7 @@ fun DashboardScreen(
                 actions = {
                     IconButton(onClick = { /* History */ }) {
                         Icon(
-                            painter = painterResource(id = android.R.drawable.ic_menu_recent_history),
+                            imageVector = Icons.Default.History,
                             contentDescription = "History",
                             tint = MaterialTheme.colorScheme.primary
                         )
@@ -134,7 +139,7 @@ fun DashboardScreen(
                     onClick = { },
                     icon = {
                         Icon(
-                            painter = painterResource(id = android.R.drawable.ic_popup_sync),
+                            imageVector = Icons.Default.Sync,
                             contentDescription = "Convert"
                         )
                     },
@@ -145,7 +150,7 @@ fun DashboardScreen(
                     onClick = { },
                     icon = {
                         Icon(
-                            painter = painterResource(id = android.R.drawable.ic_menu_gallery),
+                            imageVector = Icons.Default.Image,
                             contentDescription = "Files"
                         )
                     },
@@ -214,7 +219,7 @@ fun DashboardScreen(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                painter = painterResource(id = android.R.drawable.ic_menu_gallery),
+                                imageVector = Icons.Default.Image,
                                 contentDescription = "Image to PDF",
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                 modifier = Modifier.size(32.dp)
@@ -255,7 +260,7 @@ fun DashboardScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Icon(
-                            imageVector = Icons.Default.ArrowForward,
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
                             contentDescription = "Arrow",
                             tint = MaterialTheme.colorScheme.secondary,
                             modifier = Modifier.size(16.dp)
@@ -270,13 +275,13 @@ fun DashboardScreen(
             ComingSoonCard(
                 title = "Word to PDF",
                 description = "Preserve formatting and fonts perfectly.",
-                iconRes = android.R.drawable.ic_menu_edit
+                icon = Icons.Default.Edit
             )
             Spacer(modifier = Modifier.height(16.dp))
             ComingSoonCard(
                 title = "Excel to PDF",
                 description = "Convert spreadsheets into structured tables.",
-                iconRes = android.R.drawable.ic_menu_agenda
+                icon = Icons.Default.DateRange
             )
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -324,7 +329,7 @@ fun DashboardScreen(
 }
 
 @Composable
-fun ComingSoonCard(title: String, description: String, iconRes: Int) {
+fun ComingSoonCard(title: String, description: String, icon: androidx.compose.ui.graphics.vector.ImageVector) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -347,7 +352,7 @@ fun ComingSoonCard(title: String, description: String, iconRes: Int) {
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                        painter = painterResource(id = iconRes),
+                        imageVector = icon,
                         contentDescription = title,
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(24.dp)
