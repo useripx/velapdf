@@ -170,7 +170,8 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 [Github](https://github.com/zenoszaiys)<br>
 **giovan97**  — 
 [Github](https://github.com/giovan97) <br>
-**nazira** [Github] (https://github.com/NaziraWahdhani)
+**nazira** —
+[Github](https://github.com/NaziraWahdhani) <br>
 
 ---
 
