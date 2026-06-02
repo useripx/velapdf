@@ -15,7 +15,9 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -78,6 +80,34 @@ fun ImageToPdfScreen(
                     }
                 }
                 selectedImages = newSelectedImages
+            }
+        }
+    }
+
+    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            tempCameraUri?.let { uri ->
+                coroutineScope.launch {
+                    val newSelectedImages = selectedImages.toMutableList()
+                    withContext(Dispatchers.IO) {
+                        val cachedUri = FileUriHelper.copyUriToCache(context, uri)
+                        val fileName = "Camera_${System.currentTimeMillis()}.jpg"
+                        if (cachedUri != null) {
+                            newSelectedImages.add(
+                                SelectedImage(
+                                    originalUri = uri,
+                                    cachedUri = cachedUri,
+                                    fileName = fileName,
+                                    orderIndex = newSelectedImages.size
+                                )
+                            )
+                        }
+                    }
+                    selectedImages = newSelectedImages
+                }
             }
         }
     }
@@ -265,12 +295,12 @@ fun ImageToPdfScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                // Upload Button area
-                Box(
+                // Upload and Camera Buttons area
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 32.dp),
-                    contentAlignment = Alignment.Center
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Button(
                         onClick = {
@@ -286,13 +316,38 @@ fun ImageToPdfScreen(
                         ),
                         shape = CircleShape
                     ) {
-                        Spacer(modifier = Modifier.width(16.dp))
+                        Icon(imageVector = Icons.Default.Image, contentDescription = "Upload Image")
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
                             text = "Upload Image",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium
                         )
-                        Spacer(modifier = Modifier.width(16.dp))
+                    }
+                    
+                    Spacer(modifier = Modifier.height(16.dp))
+                    
+                    Button(
+                        onClick = {
+                            val uri = FileUriHelper.getTempCameraUri(context)
+                            tempCameraUri = uri
+                            cameraLauncher.launch(uri)
+                        },
+                        enabled = !isConverting,
+                        modifier = Modifier.height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.secondary,
+                            contentColor = MaterialTheme.colorScheme.onSecondary
+                        ),
+                        shape = CircleShape
+                    ) {
+                        Icon(imageVector = Icons.Default.CameraAlt, contentDescription = "Kamera")
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Kamera",
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                 }
 

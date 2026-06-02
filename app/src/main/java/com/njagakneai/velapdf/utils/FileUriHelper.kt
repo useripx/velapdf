@@ -3,6 +3,7 @@ package com.njagakneai.velapdf.utils
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import androidx.core.content.FileProvider
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
@@ -51,5 +52,16 @@ object FileUriHelper {
             e.printStackTrace()
             null
         }
+    }
+
+    fun getTempCameraUri(context: Context): Uri {
+        val imagesDir = File(context.cacheDir, "images")
+        if (!imagesDir.exists()) imagesDir.mkdirs()
+        val tempFile = File(imagesDir, "camera_${System.currentTimeMillis()}.jpg")
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.provider",
+            tempFile
+        )
     }
 }
