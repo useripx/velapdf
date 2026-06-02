@@ -39,14 +39,12 @@ Dokumen ini melacak riwayat pengembangan, integrasi arsitektur, dan perubahan ya
 
 ---
 
-## Langkah Selanjutnya (Next Tasks)
-
-- Implementasi modul *Core File Management* untuk pengolahan direktori dokumen.
-
----
-
 ## Tahap 4: Image Picker & Gallery (Selesai)
 
 - **SelectedImage Model** (`data/model/SelectedImage.kt`): Class data metadata *image* yang menyimpan URI asli maupun URI hasil ekstraksi _cache_.
 - **URI Caching System** (`utils/FileUriHelper.kt`): Mengatasi limitasi *Scoped Storage* di Android 13+ melalui metode duplikasi aman dengan cara melakukan kloning aliran data (_Input/Output Stream_) pada *System Media Store* ke dalam lokal file di *Cache Directory* agar konversi file tidak menolak perizinan atau melanggar *Policy*.
 - **Gallery Grid Component** (`ui/components/GridImagePicker.kt`): Integrasi Multiple Photo Picker (`ActivityResultContracts.PickMultipleVisualMedia`) dipadukan dengan daftar tampilan _Grid_ interaktif dan Coil untuk pratinjau *thumbnail* hingga batasan maksimal `50` gambar yang disetujui.
+
+---
+
+# Tahap 5

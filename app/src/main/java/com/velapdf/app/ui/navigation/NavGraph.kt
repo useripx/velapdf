@@ -41,7 +41,19 @@ fun AppNavigation(
         }
 
         composable(Screen.Dashboard.route) {
-            DashboardScreen()
+            DashboardScreen(
+                onNavigateToImageToPdf = {
+                    navController.navigate(Screen.ImageToPdf.route)
+                }
+            )
+        }
+
+        composable(Screen.ImageToPdf.route) {
+            com.velapdf.app.ui.screen.ImageToPdfScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                }
+            )
         }
     }
 }
@@ -50,4 +62,5 @@ sealed class Screen(val route: String) {
     object Splash : Screen("splash")
     object Permissions : Screen("permissions")
     object Dashboard : Screen("dashboard")
+    object ImageToPdf : Screen("image_to_pdf")
 }

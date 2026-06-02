@@ -6,5 +6,6 @@ data class SelectedImage(
     val originalUri: Uri,
     val cachedUri: Uri,
     val fileName: String,
-    val orderIndex: Int
+    val orderIndex: Int,
+    val rotationDegrees: Float = 0f
 )
