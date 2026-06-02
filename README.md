@@ -63,13 +63,13 @@ VelaPDF follows the **MVVM (Model-View-ViewModel)** architecture pattern with cl
 
 ## 🛠️ Tech Stack
 
-| Technology | Description |
-|---|---|
-| **Kotlin** | Primary programming language |
-| **Jetpack Compose** | Modern UI toolkit |
-| **Material Design 3** | Design system |
-| **MVVM** | Architecture pattern |
-| **Gradle KTS** | Build system |
+| Technology                  | Description                  |
+| --------------------------- | ---------------------------- |
+| **Kotlin**            | Primary programming language |
+| **Jetpack Compose**   | Modern UI toolkit            |
+| **Material Design 3** | Design system                |
+| **MVVM**              | Architecture pattern         |
+| **Gradle KTS**        | Build system                 |
 
 ---
 
@@ -87,11 +87,14 @@ VelaPDF follows the **MVVM (Model-View-ViewModel)** architecture pattern with cl
 Ikuti langkah-langkah di bawah ini untuk mengunduh dan menjalankan project ini di komputermu, terutama jika kamu masih pemula:
 
 ### Langkah 1: Persiapan (Prerequisites)
+
 Pastikan hal-hal berikut sudah ter-install di komputermu:
+
 1. **Git**: Unduh dan install dari [git-scm.com](https://git-scm.com/).
 2. **Android Studio**: Unduh dan install Android Studio versi terbaru dari [developer.android.com/studio](https://developer.android.com/studio).
 
 ### Langkah 2: Clone (Unduh) Repository
+
 Buka terminal (Command Prompt/PowerShell/Git Bash di Windows, atau Terminal di Mac/Linux), lalu jalankan perintah berikut secara berurutan:
 
 ```bash
@@ -106,12 +109,14 @@ cd velapdf
 ```
 
 ### Langkah 3: Buka Project di Android Studio
+
 1. Buka aplikasi **Android Studio**.
 2. Pada layar utama (Welcome to Android Studio), klik menu **Open** (atau "Open an Existing Project").
 3. Cari dan pilih folder `velapdf` hasil clone tadi, lalu klik **OK**.
 4. **Tunggu (Penting):** Android Studio akan mulai melakukan proses *Gradle Sync* dan mendownload semua hal yang dibutuhkan (library, dependencies, dll). Tunggu sampai ada tulisan "Sync System Completed" dan tidak ada loading bar di pojok kanan bawah. Pastikan internetmu aktif dan stabil.
 
 ### Langkah 4: Jalankan Aplikasi
+
 1. Colokkan HP Android ke laptop/PC (pastikan mode *Developer Options* & *USB Debugging* di HP sudah aktif) **ATAU** jalankan Emulator bawaan dari Android Studio.
 2. Di pojok atas Android Studio, pastikan nama modulnya terpilih sebagai `app` dan target devicenya sudah muncul.
 3. Klik tombol **Play (▶️ Run 'app')** berwarna hijau di panel atas (shortcut `Shift + F10`).
@@ -170,4 +175,7 @@ This project is licensed under the **MIT License** — see the [LICENSE](LICENSE
 
 <p align="center">
   Made with ❤️ using Kotlin & Jetpack Compose
+</p>
+<p align="center">
+  <img src="https://img.icons8.com/fluency/96/pdf-2.png" alt="VelaPDF Logo" width="96" height="96"/>
 </p>
