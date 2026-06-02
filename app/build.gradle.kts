@@ -7,11 +7,11 @@ plugins {
 }
 
 android {
-    namespace = "com.velapdf.app"
+    namespace = "com.njagakneai.velapdf"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.velapdf.app"
+        applicationId = "com.njagakneai.velapdf"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
