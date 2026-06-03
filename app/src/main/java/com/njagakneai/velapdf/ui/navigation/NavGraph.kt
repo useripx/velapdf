@@ -8,8 +8,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.njagakneai.velapdf.ui.screen.DashboardScreen
+import com.njagakneai.velapdf.ui.screen.MergePdfScreen
 import com.njagakneai.velapdf.ui.screen.PermissionsScreen
 import com.njagakneai.velapdf.ui.screen.SplashScreen
+import com.njagakneai.velapdf.ui.screen.HistoryScreen
+import com.njagakneai.velapdf.ui.screen.SettingsScreen
 
 @Composable
 fun AppNavigation(
@@ -45,6 +48,15 @@ fun AppNavigation(
             DashboardScreen(
                 onNavigateToImageToPdf = {
                     navController.navigate(Screen.ImageToPdf.route)
+                },
+                onNavigateToMergePdf = {
+                    navController.navigate(Screen.MergePdf.route)
+                },
+                onNavigateToHistory = {
+                    navController.navigate(Screen.History.route)
+                },
+                onNavigateToSettings = {
+                    navController.navigate(Screen.Settings.route)
                 }
             )
         }
@@ -58,6 +70,36 @@ fun AppNavigation(
                     navController.navigate(Screen.Success.createRoute(encodedUri)) {
                         popUpTo(Screen.ImageToPdf.route) { inclusive = true }
                     }
+                }
+            )
+        }
+
+        composable(Screen.MergePdf.route) {
+            MergePdfScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onMergeSuccess = { encodedUri ->
+                    navController.navigate(Screen.Success.createRoute(encodedUri)) {
+                        popUpTo(Screen.MergePdf.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(Screen.History.route) {
+            HistoryScreen(
+                historyList = emptyList(), // In a real app this would come from ViewModel/Database
+                onBackClick = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(Screen.Settings.route) {
+            SettingsScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
                 }
             )
         }
@@ -100,6 +142,9 @@ sealed class Screen(val route: String) {
     object Permissions : Screen("permissions")
     object Dashboard : Screen("dashboard")
     object ImageToPdf : Screen("image_to_pdf")
+    object MergePdf : Screen("merge_pdf")
+    object History : Screen("history")
+    object Settings : Screen("settings")
     object Converter : Screen("converter")
     object Success : Screen("success/{uri}") {
         fun createRoute(uri: String) = "success/$uri"
