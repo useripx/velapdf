@@ -218,3 +218,56 @@ Fitur **Merge PDF** memungkinkan pengguna menggabungkan beberapa file PDF dan ga
 
 - ✅ `assembleDebug` — BUILD SUCCESSFUL (0 errors, 0 Kotlin warnings)
 - ✅ Tidak ada dependensi baru yang ditambahkan (semua native Android API)
+
+---
+
+# Fitur Tambahan: Penyempurnaan UI & Riwayat (Tahap 2)
+
+**Tanggal:** 3 Juni 2026
+**Branch:** `fix/fitur_pengaturan`
+**Commit:** `feat: implement history, save as, settings`
+
+---
+
+## 1. Riwayat File (Recent Files & Files Menu)
+- **Room Database (`AppDatabase`, `HistoryDao`)**: Dibuat sebagai _Single Source of Truth_ untuk riwayat file yang sukses dibuat/digabungkan.
+- **`HistoryViewModel` & DI (Hilt)**: Digunakan untuk mengelola state History dan otomatis menampilkan list file terbaru di `HistoryScreen`.
+- **Integrasi Menu Files**: Menu "Files" di Bottom Navigation dan tombol "History" di AppBar sekarang terhubung secara fungsional ke `HistoryScreen`.
+
+## 2. Penyimpanan Custom ("Save As")
+- **UI Save As**: Menambahkan TextField "Nama File Output" dan Switch "Pilih lokasi manual (Save As)" pada layar **Image to PDF** dan **Merge PDF**.
+- **Logika Penyimpanan**: 
+  - Jika "Save As" mati: File otomatis tersimpan ke folder `Documents/VelaPDF`.
+  - Jika "Save As" menyala: Menggunakan `ActivityResultContracts.CreateDocument` agar pengguna bebas memilih folder (seperti Google Drive, Download, dll).
+
+## 3. Pengaturan Tema & Kompresi (Settings)
+- **Tema Dinamis**: `MainActivity` sekarang mengobservasi setelan Tema (Terang/Gelap/Sistem) langsung dari `PreferencesManager` menggunakan `StateFlow`.
+- **Kualitas Gambar (Kompresi)**: Fitur konversi Image to PDF dan PDF Rendering kini menerapkan skala kompresi berdasarkan pilihan pengguna di layar Pengaturan (Tinggi = 1.0x/2.0x, Sedang = 0.7x/1.5x, Rendah = 0.4x/1.0x).
+
+## 4. Perbaikan UI Tambahan
+- **Hamburger Menu**: Tersedia opsi Beranda, Beri Rating, Bagikan Aplikasi, Kebijakan Privasi (mengarah ke URL), dan Tentang Kami. Fitur klik sudah diaktifkan dan berjalan dengan lancar.
+- **Navigasi Terintegrasi**: Keseluruhan Menu Bawah (Beranda, Files, Settings) sudah terkoneksi penuh dengan Screen yang sesuai.
+
+---
+
+# Fitur Tambahan: Pengaturan Lanjutan & Bersihkan Cache (Tahap 3)
+
+**Tanggal:** 3 Juni 2026
+**Branch:** `feature/frontend-settings-preferences`
+**Commit:** `feat: create settings and wipe cache feature`
+
+---
+
+## 1. Preferensi Ukuran Halaman PDF
+- **Pilihan Standar & Custom**: Menambahkan pilihan ukuran halaman (A4, F4, Legal, Letter, A5, B5, dan Custom) di bagian pengaturan konversi.
+- **Input Custom Ukuran (Width & Height)**: Saat ukuran halaman diatur ke "Custom", akan muncul field _TextField_ tambahan bagi pengguna untuk menginputkan lebar dan tinggi halaman khusus secara manual dalam satuan milimeter (mm).
+- **Penyimpanan Terpusat (DataStore)**: Setiap perubahan state untuk `pageSize`, `customPageWidth`, dan `customPageHeight` langsung disimpan pada `PreferencesManager` dan otomatis terpantau oleh `SettingsViewModel`.
+
+## 2. Fitur Bersihkan Cache & Riwayat
+- **Aksi Konfirmasi (AlertDialog)**: Dilengkapi dengan dialog peringatan berwarna merah _(error container)_ untuk mencegah ketidaksengajaan terhapusnya riwayat.
+- **Menyeluruh (Room + DataStore)**: Tombol aksi ini bukan sekedar mereset Preferensi di `PreferencesManager.clearPreferences()`, tetapi juga mengeksekusi *query* `historyDao.deleteAllHistory()` untuk menghapus semua *row* daftar di layar *Recent Files / History*.
+- **Aman Secara File**: Fitur ini hanya melakukan proses "Wipe Data Local" di layer Room dan DataStore. File PDF asli pengguna di penyimpanan (*Storage*) eksternal tetap terjamin dan tidak ikut terhapus.
+
+## Verifikasi
+- ✅ `assembleDebug` — BUILD SUCCESSFUL
+- ✅ Fitur terhubung sepenuhnya tanpa kesalahan UI maupun Logika.

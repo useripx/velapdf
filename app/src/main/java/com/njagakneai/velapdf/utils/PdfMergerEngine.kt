@@ -102,6 +102,7 @@ object PdfMergerEngine {
         context: Context,
         documents: List<MergeableDocument>,
         outputFile: File,
+        compressionQuality: String,
         onProgress: suspend (Int) -> Unit
     ): File = withContext(Dispatchers.IO) {
         val validation = validate(documents)
@@ -113,11 +114,36 @@ object PdfMergerEngine {
         var processedPages = 0
         val pdfDocument = PdfDocument()
 
+        val imageScaleFactor = when (compressionQuality) {
+            "Sedang" -> 0.7f
+            "Rendah" -> 0.4f
+            else -> 1.0f
+        }
+
+        // For PDFs, we previously used scale = 2 for high quality.
+        // We can map it: Tinggi=2.0, Sedang=1.5, Rendah=1.0
+        val pdfScaleFactor = when (compressionQuality) {
+            "Sedang" -> 1.5f
+            "Rendah" -> 1.0f
+            else -> 2.0f
+        }
+
         try {
             for (doc in documents) {
                 when (doc.type) {
                     DocumentType.IMAGE -> {
-                        val bitmap = loadImageBitmap(context, doc)
+                        var bitmap = loadImageBitmap(context, doc)
+                        
+                        if (imageScaleFactor < 1.0f) {
+                            val scaledWidth = (bitmap.width * imageScaleFactor).toInt().coerceAtLeast(1)
+                            val scaledHeight = (bitmap.height * imageScaleFactor).toInt().coerceAtLeast(1)
+                            val scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledWidth, scaledHeight, true)
+                            if (scaledBitmap != bitmap) {
+                                bitmap.recycle()
+                                bitmap = scaledBitmap
+                            }
+                        }
+
                         addBitmapPage(pdfDocument, bitmap, processedPages + 1)
                         bitmap.recycle()
                         processedPages++
@@ -130,16 +156,17 @@ object PdfMergerEngine {
                             val renderer = PdfRenderer(fileDescriptor)
                             for (pageIndex in 0 until renderer.pageCount) {
                                 val page = renderer.openPage(pageIndex)
-                                // Render PDF page to bitmap at 2x scale for quality
-                                val scale = 2
-                                val bitmapWidth = page.width * scale
-                                val bitmapHeight = page.height * scale
+                                
+                                val bitmapWidth = (page.width * pdfScaleFactor).toInt().coerceAtLeast(1)
+                                val bitmapHeight = (page.height * pdfScaleFactor).toInt().coerceAtLeast(1)
                                 val bitmap = Bitmap.createBitmap(
                                     bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888
                                 )
                                 // Fill with white background
                                 val canvas = Canvas(bitmap)
                                 canvas.drawColor(Color.WHITE)
+                                
+                                // Setup transform matrix if scale != 1.0 (wait, PdfRenderer page.render handles scaling via bitmap size!)
                                 page.render(
                                     bitmap, null, null,
                                     PdfRenderer.Page.RENDER_MODE_FOR_PRINT
