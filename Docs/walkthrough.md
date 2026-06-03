@@ -271,3 +271,27 @@ Fitur **Merge PDF** memungkinkan pengguna menggabungkan beberapa file PDF dan ga
 ## Verifikasi
 - ✅ `assembleDebug` — BUILD SUCCESSFUL
 - ✅ Fitur terhubung sepenuhnya tanpa kesalahan UI maupun Logika.
+
+---
+
+# Fitur Tambahan: Integrasi UI, Animasi, dan Perbaikan Bug Lanjutan (Tahap 4)
+
+**Tanggal:** 3 Juni 2026
+**Branch:** `feature/frontend-settings-preferences`
+**Commit:** `feat: add ui animations and file provider`
+
+---
+
+## 1. Integrasi UI & Animasi
+- **Transisi Antar Layar**: `NavGraph.kt` telah ditambahkan pengaturan `enterTransition`, `exitTransition`, `popEnterTransition`, dan `popExitTransition` (slide dan fade). Transisi dibuat lebih modern dengan animasi pergerakan layar yang dinamis sesuai dengan material design.
+- **Berbagi File (FileProvider)**: Terpasang *FileProvider* yang terkonfigurasi di `filepaths.xml`. Fitur `FileShareHelper.kt` menggunakan intent `ACTION_SEND` untuk berbagi PDF hasil konversi langsung dari `SuccessScreen` ke aplikasi lain (WhatsApp, Email, Telegram, dll). Layar ini juga sudah diterjemahkan seluruhnya ke bahasa Indonesia.
+- **Penyelarasan Tampilan**: Teks privasi di beranda (Dashboard) dan tag "TAHAP PENGEMBANGAN" diselaraskan agar ramah mode gelap (Dark Mode).
+
+## 2. Perbaikan Bug Berdasarkan Feedback
+- **Wipe Cache & History**: Fungsi untuk membersihkan cache kini memanggil fungsi *recursive delete* yang mengosongkan folder `cacheDir` aplikasi secara fisik (seperti folder `pdf_exports` dan `camera_images`), tidak hanya menghapus Riwayat di database.
+- **Interaksi & Ukuran Riwayat**: *Bug* ukuran file konversi di *History* ("0 KB") telah diperbaiki dengan mengambil ukuran sebenarnya dari *temp file* sebelum dihapus. Item di halaman Riwayat sekarang bisa disentuh (diklik) dan akan otomatis membuka *viewer* PDF (melalui `ACTION_VIEW`).
+- **Dialog Izin Akses (PermissionsScreen)**: Halaman `PermissionsScreen` yang tadinya berupa *full screen* kini telah didesain ulang menyerupai `AlertDialog` dan sepenuhnya selaras dengan tampilan `StoragePermissionDialog`.
+
+## Verifikasi
+- ✅ `assembleDebug` — BUILD SUCCESSFUL (100% tanpa error)
+- ✅ Perubahan telah di-*commit* ke Git dan di-*push* untuk di-*Pull Request*.
