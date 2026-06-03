@@ -119,11 +119,13 @@ Dokumen ini melacak riwayat pengembangan, integrasi arsitektur, dan perubahan ya
 **Tanggal:** 30 Mei 2026
 **Branch:** `feature/Backend-cache-repository`
 **Task:**
+
 - Pembuatan List Tampilan Riwayat Konversi Berkas PDF
 - Setup Room DB, Entity & DAO untuk caching file dan penataan tanggal
 - Memperbarui versi Room di `libs.versions.toml` ke `2.7.0` untuk kompatibilitas dengan Kapt di Kotlin 2.2
 
 **Endpoint:**
+
 - `ui/screen/HistoryScreen.kt`
 - `data/model/HistoryEntity.kt`
 - `data/database/HistoryDao.kt`
@@ -136,11 +138,83 @@ Dokumen ini melacak riwayat pengembangan, integrasi arsitektur, dan perubahan ya
 ## Fitur Tambahan: Ambil Gambar dari Kamera (Selesai)
 
 **Task:**
+
 - Menambahkan tombol "Kamera" di bawah tombol "Upload Image" pada `ImageToPdfScreen`.
 - Mengimplementasikan `ActivityResultContracts.TakePicture()` untuk mengambil foto secara langsung.
 - Mendaftarkan path `camera_images` di dalam `filepaths.xml` dan membuat File Provider lokal untuk menampung gambar kamera secara aman via `FileUriHelper`.
 
 **Endpoint:**
+
 - `ui/screen/ImageToPdfScreen.kt`
 - `utils/FileUriHelper.kt`
 - `res/xml/filepaths.xml`
+
+---
+
+# Fitur Tambahan: Merge PDF
+
+
+# Walkthrough: Fitur Merge PDF
+
+**Tanggal:** 3 Juni 2026
+**Branch:** `feature/mergepdf`
+**Commit:** `feat: add merge pdf feature`
+
+---
+
+## Ringkasan
+
+Fitur **Merge PDF** memungkinkan pengguna menggabungkan beberapa file PDF dan gambar (JPEG/PNG/WebP) menjadi satu dokumen PDF. Fitur ini ditempatkan di bawah "Image to PDF" pada Dashboard dengan badge "New".
+
+### Kapasitas & Batasan
+
+- Maksimal **100 file** per sesi merge
+- Maksimal **500 halaman per file** PDF
+- Maksimal **500 halaman total** dalam output gabungan
+- Format input: PDF, JPEG, PNG, WebP
+
+### Fitur Utama
+
+- **File Picker** multi-select untuk PDF dan gambar (`OpenMultipleDocuments`)
+- **Sortable Document List** — urut ulang file dengan tombol up/down
+- **Hapus file** individual atau hapus semua
+- **Capacity indicator** — progress bar visual menunjukkan penggunaan kapasitas halaman
+- **Auto-convert gambar** ke halaman PDF saat merge
+- **Progress bar** animasi saat proses merge berlangsung
+- **Notifikasi** in-app toast + system notification saat selesai
+- Navigasi ke **SuccessScreen** setelah merge berhasil
+
+---
+
+## File Baru
+
+| File                                                                                                                                                        | Deskripsi                                                                         |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [MergeableDocument.kt](file:///c:/Users/yogia/AndroidStudioProjects/VelaPDF/app/src/main/java/com/njagakneai/velapdf/data/model/MergeableDocument.kt)          | Data class untuk dokumen (PDF/Image) yang akan digabung                           |
+| [PdfMergerEngine.kt](file:///c:/Users/yogia/AndroidStudioProjects/VelaPDF/app/src/main/java/com/njagakneai/velapdf/utils/PdfMergerEngine.kt)                   | Backend engine merge menggunakan native Android `PdfRenderer` + `PdfDocument` |
+| [MergePdfViewModel.kt](file:///c:/Users/yogia/AndroidStudioProjects/VelaPDF/app/src/main/java/com/njagakneai/velapdf/ui/viewmodel/MergePdfViewModel.kt)        | ViewModel untuk state management (dokumen list, validasi, merge state)            |
+| [SortableDocumentList.kt](file:///c:/Users/yogia/AndroidStudioProjects/VelaPDF/app/src/main/java/com/njagakneai/velapdf/ui/components/SortableDocumentList.kt) | Komponen UI list dokumen dengan kontrol urut/hapus                                |
+| [MergePdfScreen.kt](file:///c:/Users/yogia/AndroidStudioProjects/VelaPDF/app/src/main/java/com/njagakneai/velapdf/ui/screen/MergePdfScreen.kt)                 | Layar utama fitur Merge PDF                                                       |
+
+## File Dimodifikasi
+
+| File                                                                                                                                          | Perubahan                                                                                                          |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| [NavGraph.kt](file:///c:/Users/yogia/AndroidStudioProjects/VelaPDF/app/src/main/java/com/njagakneai/velapdf/ui/navigation/NavGraph.kt)           | Rute navigasi `Screen.MergePdf`, composable `MergePdfScreen`, callback `onMergeSuccess` ke `SuccessScreen` |
+| [DashboardScreen.kt](file:///c:/Users/yogia/AndroidStudioProjects/VelaPDF/app/src/main/java/com/njagakneai/velapdf/ui/screen/DashboardScreen.kt) | Card "Merge PDF" dengan ikon `MergeType`, badge "New", callback `onNavigateToMergePdf`                         |
+
+---
+
+## Keputusan Arsitektur
+
+1. **Native Android API** — Tidak menggunakan library pihak ketiga (`pdfbox-android`). Menggunakan `android.graphics.pdf.PdfRenderer` untuk membaca PDF dan `android.graphics.pdf.PdfDocument` untuk menulis output. Keduanya sudah tersedia sejak API 21.
+2. **Reuse `PdfGenerationState`** — Menggunakan sealed class yang sama dengan fitur Image-to-PDF untuk konsistensi state flow (Idle → Loading → Success/Error).
+3. **File-level ordering** — Pengguna mengatur urutan berdasarkan file utuh (bukan halaman individual), sesuai keputusan dari review plan.
+4. **Format dibatasi PDF + Gambar** — Konversi Word/Excel tetap "Coming Soon" sesuai keputusan pengguna.
+
+---
+
+## Verifikasi
+
+- ✅ `assembleDebug` — BUILD SUCCESSFUL (0 errors, 0 Kotlin warnings)
+- ✅ Tidak ada dependensi baru yang ditambahkan (semua native Android API)
