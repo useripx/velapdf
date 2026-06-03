@@ -12,6 +12,10 @@ import com.njagakneai.velapdf.ui.screen.MergePdfScreen
 import com.njagakneai.velapdf.ui.screen.PermissionsScreen
 import com.njagakneai.velapdf.ui.screen.SplashScreen
 import com.njagakneai.velapdf.ui.screen.HistoryScreen
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import com.njagakneai.velapdf.ui.screen.SettingsScreen
 
 @Composable
@@ -24,7 +28,11 @@ fun AppNavigation(
         startDestination = Screen.Splash.route,
         modifier = modifier
     ) {
-        composable(Screen.Splash.route) {
+        composable(
+            route = Screen.Splash.route,
+            enterTransition = { fadeIn(animationSpec = tween(500)) },
+            exitTransition = { fadeOut(animationSpec = tween(500)) }
+        ) {
             SplashScreen(
                 onNavigateNext = { route ->
                     navController.navigate(route) {
@@ -34,7 +42,11 @@ fun AppNavigation(
             )
         }
 
-        composable(Screen.Permissions.route) {
+        composable(
+            route = Screen.Permissions.route,
+            enterTransition = { fadeIn(animationSpec = tween(300)) },
+            exitTransition = { fadeOut(animationSpec = tween(300)) }
+        ) {
             PermissionsScreen(
                 onPermissionsGranted = {
                     navController.navigate(Screen.Dashboard.route) {
@@ -44,7 +56,23 @@ fun AppNavigation(
             )
         }
 
-        composable(Screen.Dashboard.route) {
+        composable(
+            route = Screen.Dashboard.route,
+            enterTransition = {
+                when (initialState.destination.route) {
+                    Screen.History.route, Screen.Settings.route -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Down, animationSpec = tween(300))
+                    Screen.ImageToPdf.route, Screen.MergePdf.route -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right, animationSpec = tween(300))
+                    else -> fadeIn(animationSpec = tween(300))
+                }
+            },
+            exitTransition = {
+                when (targetState.destination.route) {
+                    Screen.History.route, Screen.Settings.route -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Up, animationSpec = tween(300))
+                    Screen.ImageToPdf.route, Screen.MergePdf.route -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, animationSpec = tween(300))
+                    else -> fadeOut(animationSpec = tween(300))
+                }
+            }
+        ) {
             DashboardScreen(
                 onNavigateToImageToPdf = {
                     navController.navigate(Screen.ImageToPdf.route)
@@ -61,7 +89,13 @@ fun AppNavigation(
             )
         }
 
-        composable(Screen.ImageToPdf.route) {
+        composable(
+            route = Screen.ImageToPdf.route,
+            enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, animationSpec = tween(300)) },
+            exitTransition = { fadeOut(animationSpec = tween(300)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(300)) },
+            popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, animationSpec = tween(300)) }
+        ) {
             com.njagakneai.velapdf.ui.screen.ImageToPdfScreen(
                 onNavigateBack = {
                     navController.popBackStack()
@@ -74,7 +108,13 @@ fun AppNavigation(
             )
         }
 
-        composable(Screen.MergePdf.route) {
+        composable(
+            route = Screen.MergePdf.route,
+            enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, animationSpec = tween(300)) },
+            exitTransition = { fadeOut(animationSpec = tween(300)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(300)) },
+            popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, animationSpec = tween(300)) }
+        ) {
             MergePdfScreen(
                 onNavigateBack = {
                     navController.popBackStack()
@@ -87,7 +127,13 @@ fun AppNavigation(
             )
         }
 
-        composable(Screen.History.route) {
+        composable(
+            route = Screen.History.route,
+            enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, animationSpec = tween(300)) },
+            exitTransition = { fadeOut(animationSpec = tween(300)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(300)) },
+            popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, animationSpec = tween(300)) }
+        ) {
             HistoryScreen(
                 onBackClick = {
                     navController.popBackStack()
@@ -95,7 +141,13 @@ fun AppNavigation(
             )
         }
 
-        composable(Screen.Settings.route) {
+        composable(
+            route = Screen.Settings.route,
+            enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, animationSpec = tween(300)) },
+            exitTransition = { fadeOut(animationSpec = tween(300)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(300)) },
+            popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, animationSpec = tween(300)) }
+        ) {
             SettingsScreen(
                 onNavigateBack = {
                     navController.popBackStack()
@@ -103,7 +155,11 @@ fun AppNavigation(
             )
         }
 
-        composable(Screen.Converter.route) {
+        composable(
+            route = Screen.Converter.route,
+            enterTransition = { fadeIn(animationSpec = tween(300)) },
+            exitTransition = { fadeOut(animationSpec = tween(300)) }
+        ) {
             // In a real implementation, you'd pass the list of SelectedImages via a shared ViewModel
             com.njagakneai.velapdf.ui.screen.ConverterScreen(
                 images = emptyList(), // Placeholder
@@ -121,7 +177,9 @@ fun AppNavigation(
 
         composable(
             route = Screen.Success.route,
-            arguments = listOf(androidx.navigation.navArgument("uri") { type = androidx.navigation.NavType.StringType })
+            arguments = listOf(androidx.navigation.navArgument("uri") { type = androidx.navigation.NavType.StringType }),
+            enterTransition = { fadeIn(animationSpec = tween(400)) },
+            exitTransition = { fadeOut(animationSpec = tween(400)) }
         ) { backStackEntry ->
             val uri = backStackEntry.arguments?.getString("uri") ?: ""
             com.njagakneai.velapdf.ui.screen.SuccessScreen(

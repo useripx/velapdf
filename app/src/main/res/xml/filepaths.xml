@@ -2,4 +2,8 @@
 <paths>
     <cache-path name="pdf_exports" path="pdf_exports/" />
     <cache-path name="images" path="images/" />
+    <cache-path name="camera_images" path="camera_images/" />
+    <external-path name="external_documents" path="Documents/VelaPDF/" />
+    <external-path name="external_root" path="." />
+    <external-files-path name="external_files" path="." />
 </paths>

@@ -3,9 +3,11 @@ package com.njagakneai.velapdf.ui.screen
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -13,6 +15,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.rememberCoroutineScope
@@ -56,69 +60,57 @@ fun PermissionsScreen(
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
     ) {
-         Spacer(modifier = Modifier.height(16.dp))
-        
-        Text(
-            text = "Izin Akses Dibutuhkan",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
-            textAlign = TextAlign.Center
-        )
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        Text(
-             text = "VelaPDF membutuhkan akses Kamera untuk mengambil gambar dokumen dan akses Penyimpanan (Storage) untuk menyimpan file PDF hasil konversi Anda.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center
-        )
-        
-        Spacer(modifier = Modifier.height(48.dp))
-        
-        Button(
-            onClick = {
-                multiplePermissionsState.launchMultiplePermissionRequest()
-            },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary
-            ),
-            modifier = Modifier.padding(horizontal = 24.dp)
-        ) {
-            Text(
-                text = "Cari Izin Akses",
-                modifier = Modifier.padding(vertical = 8.dp)
-            )
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-        
-        // Skip Button if they don't want to grant for now
-        Button(
-            onClick = {
-                // Just proceed for now, the app can ask again later in context if needed
-                coroutineScope.launch {
-                    viewModel.markPermissionsGranted() // Assuming they bypassed the initial onboarding
-                    onPermissionsGranted()
+        AlertDialog(
+            onDismissRequest = { /* No-op, force user to choose */ },
+            title = {
+                Column(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    androidx.compose.foundation.Image(
+                        painter = androidx.compose.ui.res.painterResource(id = com.njagakneai.velapdf.R.drawable.logo),
+                        contentDescription = "App Icon",
+                        modifier = Modifier.size(64.dp)
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = "Izin Akses Dibutuhkan",
+                        style = MaterialTheme.typography.titleLarge,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.primary,
+                        textAlign = TextAlign.Center
+                    )
                 }
             },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = androidx.compose.ui.graphics.Color.Transparent,
-                contentColor = MaterialTheme.colorScheme.secondary
-            ),
-            elevation = ButtonDefaults.buttonElevation(defaultElevation = 0.dp)
-        ) {
-            Text(text = "Nanti Saja")
-        }
+            text = {
+                Text(
+                    text = "VelaPDF membutuhkan akses Kamera untuk mengambil gambar dokumen dan akses Penyimpanan (Storage) untuk menyimpan file PDF hasil konversi Anda. Mohon izinkan akses ini di pengaturan perangkat untuk melanjutkan.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    textAlign = TextAlign.Center
+                )
+            },
+            confirmButton = {
+                Button(onClick = {
+                    multiplePermissionsState.launchMultiplePermissionRequest()
+                }) {
+                    Text("Cari Izin Akses")
+                }
+            },
+            dismissButton = {
+                androidx.compose.material3.TextButton(onClick = {
+                    coroutineScope.launch {
+                        viewModel.markPermissionsGranted()
+                        onPermissionsGranted()
+                    }
+                }) {
+                    Text("Nanti Saja")
+                }
+            }
+        )
     }
 }

@@ -173,6 +173,8 @@ class MergePdfViewModel @Inject constructor(
                 )
 
                 val finalUri: Uri
+                var fileSize = tempFile.length()
+                
                 if (saveAsUri != null) {
                     // Copy temp file to chosen Save As URI
                     context.contentResolver.openOutputStream(saveAsUri)?.use { outStream ->
@@ -205,7 +207,7 @@ class MergePdfViewModel @Inject constructor(
                     HistoryEntity(
                         fileName = "$outputFileName.pdf",
                         filePath = finalUri.toString(),
-                        fileSize = tempFile.length(),
+                        fileSize = fileSize,
                         timestamp = System.currentTimeMillis()
                     )
                 )

@@ -7,8 +7,12 @@ import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.OpenInNew
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -19,6 +23,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.njagakneai.velapdf.R
+import com.njagakneai.velapdf.utils.FileShareHelper
 
 @Composable
 fun SuccessScreen(
@@ -40,32 +45,53 @@ fun SuccessScreen(
             )
             Spacer(modifier = Modifier.height(24.dp))
             Text(
-                "Conversion Successful!", 
+                "Konversi Berhasil!", 
                 style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
             )
             Spacer(modifier = Modifier.height(32.dp))
             
-            Button(onClick = {
-                val intent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(uri, "application/pdf")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                try {
-                    context.startActivity(intent)
-                } catch (e: ActivityNotFoundException) {
-                    Toast.makeText(context, "No PDF viewer found", Toast.LENGTH_SHORT).show()
-                }
-            }) {
-                Text("Open PDF")
+            Button(
+                onClick = {
+                    val intent = Intent(Intent.ACTION_VIEW).apply {
+                        setDataAndType(uri, "application/pdf")
+                        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    }
+                    try {
+                        context.startActivity(intent)
+                    } catch (e: ActivityNotFoundException) {
+                        Toast.makeText(context, "Tidak ada aplikasi pembaca PDF", Toast.LENGTH_SHORT).show()
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(0.7f)
+            ) {
+                Icon(imageVector = Icons.Default.OpenInNew, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Buka PDF")
             }
             
             Spacer(modifier = Modifier.height(16.dp))
+
+            Button(
+                onClick = {
+                    FileShareHelper.shareFile(context, uri)
+                },
+                modifier = Modifier.fillMaxWidth(0.7f),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.secondary
+                )
+            ) {
+                Icon(imageVector = Icons.Default.Share, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Bagikan PDF")
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
             
             Button(
                 onClick = onBackToDashboard,
                 colors = ButtonDefaults.outlinedButtonColors(),
             ) {
-                Text("Back to Dashboard")
+                Text("Kembali ke Beranda")
             }
         }
     }
