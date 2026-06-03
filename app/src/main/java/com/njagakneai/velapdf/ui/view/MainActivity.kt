@@ -13,15 +13,31 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.njagakneai.velapdf.ui.navigation.AppNavigation
 import com.njagakneai.velapdf.ui.theme.VelaPDFTheme
+import com.njagakneai.velapdf.data.preferences.PreferencesManager
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.foundation.isSystemInDarkTheme
+import javax.inject.Inject
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    @Inject
+    lateinit var preferencesManager: PreferencesManager
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            VelaPDFTheme {
+            val appTheme by preferencesManager.appTheme.collectAsState(initial = "Sistem")
+            val isDarkTheme = when (appTheme) {
+                "Terang" -> false
+                "Gelap" -> true
+                else -> isSystemInDarkTheme()
+            }
+
+            VelaPDFTheme(darkTheme = isDarkTheme) {
                 AppNavigation()
             }
         }

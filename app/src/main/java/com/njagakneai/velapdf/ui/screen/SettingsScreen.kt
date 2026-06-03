@@ -11,18 +11,28 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.njagakneai.velapdf.ui.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    viewModel: SettingsViewModel = hiltViewModel()
 ) {
-    var isAutoOpenEnabled by remember { mutableStateOf(true) }
+    val isAutoOpenEnabled by viewModel.isAutoOpenEnabled.collectAsState()
+    val selectedTheme by viewModel.appTheme.collectAsState()
+    val selectedQuality by viewModel.compressionQuality.collectAsState()
+    val selectedPageSize by viewModel.pageSize.collectAsState()
+    val customWidth by viewModel.customPageWidth.collectAsState()
+    val customHeight by viewModel.customPageHeight.collectAsState()
+
     var expandedTheme by remember { mutableStateOf(false) }
-    var selectedTheme by remember { mutableStateOf("Sistem") }
-    
     var expandedQuality by remember { mutableStateOf(false) }
-    var selectedQuality by remember { mutableStateOf("Medium") }
+    var expandedPageSize by remember { mutableStateOf(false) }
+    var showWipeConfirmDialog by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -86,15 +96,15 @@ fun SettingsScreen(
                         ) {
                             DropdownMenuItem(
                                 text = { Text("Terang") },
-                                onClick = { selectedTheme = "Terang"; expandedTheme = false }
+                                onClick = { viewModel.setAppTheme("Terang"); expandedTheme = false }
                             )
                             DropdownMenuItem(
                                 text = { Text("Gelap") },
-                                onClick = { selectedTheme = "Gelap"; expandedTheme = false }
+                                onClick = { viewModel.setAppTheme("Gelap"); expandedTheme = false }
                             )
                             DropdownMenuItem(
                                 text = { Text("Sistem") },
-                                onClick = { selectedTheme = "Sistem"; expandedTheme = false }
+                                onClick = { viewModel.setAppTheme("Sistem"); expandedTheme = false }
                             )
                         }
                     }
@@ -137,18 +147,83 @@ fun SettingsScreen(
                             onDismissRequest = { expandedQuality = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("High") },
-                                onClick = { selectedQuality = "High"; expandedQuality = false }
+                                text = { Text("Tinggi") },
+                                onClick = { viewModel.setCompressionQuality("Tinggi"); expandedQuality = false }
                             )
                             DropdownMenuItem(
-                                text = { Text("Medium") },
-                                onClick = { selectedQuality = "Medium"; expandedQuality = false }
+                                text = { Text("Sedang") },
+                                onClick = { viewModel.setCompressionQuality("Sedang"); expandedQuality = false }
                             )
                             DropdownMenuItem(
-                                text = { Text("Low") },
-                                onClick = { selectedQuality = "Low"; expandedQuality = false }
+                                text = { Text("Rendah") },
+                                onClick = { viewModel.setCompressionQuality("Rendah"); expandedQuality = false }
                             )
                         }
+                    }
+                }
+            }
+
+            // Page Size Setting
+            item {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(imageVector = Icons.Default.InsertPageBreak, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        Spacer(modifier = Modifier.width(16.dp))
+                        Column {
+                            Text(text = "Ukuran Halaman", style = MaterialTheme.typography.bodyLarge)
+                            Text(text = "Standar halaman PDF", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
+                    Box {
+                        TextButton(onClick = { expandedPageSize = true }) {
+                            Text(selectedPageSize)
+                        }
+                        DropdownMenu(
+                            expanded = expandedPageSize,
+                            onDismissRequest = { expandedPageSize = false }
+                        ) {
+                            listOf("A4", "A5", "B5", "F4", "Legal", "Letter", "Custom").forEach { size ->
+                                DropdownMenuItem(
+                                    text = { Text(size) },
+                                    onClick = { viewModel.setPageSize(size); expandedPageSize = false }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Custom Page Size Inputs
+            if (selectedPageSize == "Custom") {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 40.dp, top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = customWidth.toString(),
+                            onValueChange = { newValue ->
+                                newValue.toIntOrNull()?.let { viewModel.setCustomPageWidth(it) }
+                            },
+                            label = { Text("Lebar (mm)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f)
+                        )
+                        OutlinedTextField(
+                            value = customHeight.toString(),
+                            onValueChange = { newValue ->
+                                newValue.toIntOrNull()?.let { viewModel.setCustomPageHeight(it) }
+                            },
+                            label = { Text("Tinggi (mm)") },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
             }
@@ -170,7 +245,7 @@ fun SettingsScreen(
                     }
                     Switch(
                         checked = isAutoOpenEnabled,
-                        onCheckedChange = { isAutoOpenEnabled = it }
+                        onCheckedChange = { viewModel.setAutoOpenEnabled(it) }
                     )
                 }
             }
@@ -203,6 +278,61 @@ fun SettingsScreen(
                     }
                 }
             }
+            item { HorizontalDivider() }
+
+            // Manajemen Data
+            item {
+                Text(
+                    text = "Manajemen Data",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(top = 8.dp, bottom = 8.dp)
+                )
+            }
+            
+            item {
+                Button(
+                    onClick = { showWipeConfirmDialog = true },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Icon(imageVector = Icons.Default.DeleteForever, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = "Bersihkan Cache & Riwayat")
+                }
+                Text(
+                    text = "Tindakan ini akan menghapus semua riwayat konversi lokal dan mereset pengaturan ke bawaan. File PDF asli tidak akan terhapus.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp)
+                )
+            }
         }
+    }
+
+    if (showWipeConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { showWipeConfirmDialog = false },
+            title = { Text("Konfirmasi Hapus") },
+            text = { Text("Apakah Anda yakin ingin menghapus semua cache, riwayat, dan mereset pengaturan? Tindakan ini tidak dapat dibatalkan.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showWipeConfirmDialog = false
+                        viewModel.wipeCache {
+                            // Optionally navigate away or show toast
+                        }
+                    },
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)
+                ) {
+                    Text("Ya, Bersihkan")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWipeConfirmDialog = false }) {
+                    Text("Batal")
+                }
+            }
+        )
     }
 }

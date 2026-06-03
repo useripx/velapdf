@@ -16,6 +16,7 @@ object PdfGenerator {
         context: Context,
         images: List<SelectedImage>,
         outputFile: File,
+        compressionQuality: String,
         onProgress: suspend (Int) -> Unit
     ): File = withContext(Dispatchers.IO) {
         if (images.isEmpty()) throw IllegalArgumentException("No images to convert")
@@ -23,8 +24,24 @@ object PdfGenerator {
         val pdfDocument = PdfDocument()
 
         try {
+            val scaleFactor = when (compressionQuality) {
+                "Sedang" -> 0.7f
+                "Rendah" -> 0.4f
+                else -> 1.0f
+            }
+
             images.forEachIndexed { index, selectedImage ->
-                val bitmap = getBitmapFromUri(context, selectedImage)
+                var bitmap = getBitmapFromUri(context, selectedImage)
+                
+                if (scaleFactor < 1.0f) {
+                    val scaledWidth = (bitmap.width * scaleFactor).toInt().coerceAtLeast(1)
+                    val scaledHeight = (bitmap.height * scaleFactor).toInt().coerceAtLeast(1)
+                    val scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledWidth, scaledHeight, true)
+                    if (scaledBitmap != bitmap) {
+                        bitmap.recycle()
+                        bitmap = scaledBitmap
+                    }
+                }
                 
                 val pageInfo = PdfDocument.PageInfo.Builder(bitmap.width, bitmap.height, index + 1).create()
                 val page = pdfDocument.startPage(pageInfo)

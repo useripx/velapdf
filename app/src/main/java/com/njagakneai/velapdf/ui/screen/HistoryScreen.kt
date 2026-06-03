@@ -11,13 +11,18 @@ import androidx.compose.ui.unit.dp
 import com.njagakneai.velapdf.data.model.HistoryEntity
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.njagakneai.velapdf.ui.viewmodel.HistoryViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
-    historyList: List<HistoryEntity> = emptyList(),
+    viewModel: HistoryViewModel = hiltViewModel(),
     onBackClick: () -> Unit = {}
 ) {
+    val historyList by viewModel.historyList.collectAsState()
     Scaffold(
         topBar = {
             TopAppBar(

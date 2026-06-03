@@ -35,6 +35,7 @@ class PdfRepository(private val context: Context) {
                 context = context,
                 images = images,
                 outputFile = outputFile,
+                compressionQuality = "Tinggi",
                 onProgress = { progress ->
                     trySend(PdfGenerationState.Loading(progress))
                 }

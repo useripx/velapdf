@@ -89,7 +89,6 @@ fun AppNavigation(
 
         composable(Screen.History.route) {
             HistoryScreen(
-                historyList = emptyList(), // In a real app this would come from ViewModel/Database
                 onBackClick = {
                     navController.popBackStack()
                 }

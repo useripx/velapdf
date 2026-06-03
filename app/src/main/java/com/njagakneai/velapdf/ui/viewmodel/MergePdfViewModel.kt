@@ -19,8 +19,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.io.FileOutputStream
+import android.os.Environment
+import com.njagakneai.velapdf.data.database.HistoryDao
+import com.njagakneai.velapdf.data.model.HistoryEntity
+import com.njagakneai.velapdf.data.preferences.PreferencesManager
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.first
+import javax.inject.Inject
 
-class MergePdfViewModel : ViewModel() {
+@HiltViewModel
+class MergePdfViewModel @Inject constructor(
+    private val historyDao: HistoryDao,
+    private val preferencesManager: PreferencesManager
+) : ViewModel() {
 
     val documents = mutableStateListOf<MergeableDocument>()
 
@@ -132,7 +144,7 @@ class MergePdfViewModel : ViewModel() {
     /**
      * Starts the merge process.
      */
-    fun startMerge(context: Context) {
+    fun startMerge(context: Context, outputFileName: String, saveAsUri: Uri?) {
         val validation = validate()
         if (!validation.isValid) {
             _mergeState.value = PdfGenerationState.Error(
@@ -145,28 +157,60 @@ class MergePdfViewModel : ViewModel() {
 
         viewModelScope.launch {
             try {
-                val outputDir = File(context.cacheDir, "pdf_exports")
-                if (!outputDir.exists()) outputDir.mkdirs()
-
-                val outputFileName = "MergePDF_${System.currentTimeMillis()}"
-                val outputFile = File(outputDir, "$outputFileName.pdf")
-
+                // Determine output destination
+                val tempFile = File(context.cacheDir, "${outputFileName}_temp.pdf")
+                
+                val quality = preferencesManager.compressionQuality.first()
+                
                 PdfMergerEngine.mergeDocuments(
                     context = context,
                     documents = documents.toList(),
-                    outputFile = outputFile,
+                    outputFile = tempFile,
+                    compressionQuality = quality,
                     onProgress = { progress ->
                         _mergeState.value = PdfGenerationState.Loading(progress)
                     }
                 )
 
-                val uri = FileProvider.getUriForFile(
-                    context,
-                    "${context.packageName}.provider",
-                    outputFile
+                val finalUri: Uri
+                if (saveAsUri != null) {
+                    // Copy temp file to chosen Save As URI
+                    context.contentResolver.openOutputStream(saveAsUri)?.use { outStream ->
+                        tempFile.inputStream().use { inStream ->
+                            inStream.copyTo(outStream)
+                        }
+                    }
+                    finalUri = saveAsUri
+                } else {
+                    // Save to Documents/VelaPDF by default
+                    val documentsDir = File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOCUMENTS), "VelaPDF")
+                    if (!documentsDir.exists()) {
+                        documentsDir.mkdirs()
+                    }
+                    val finalFile = File(documentsDir, "$outputFileName.pdf")
+                    tempFile.copyTo(finalFile, overwrite = true)
+                    
+                    finalUri = FileProvider.getUriForFile(
+                        context,
+                        "${context.packageName}.provider",
+                        finalFile
+                    )
+                }
+                
+                // Cleanup temp
+                if (tempFile.exists()) tempFile.delete()
+
+                // Insert to history
+                historyDao.insertHistory(
+                    HistoryEntity(
+                        fileName = "$outputFileName.pdf",
+                        filePath = finalUri.toString(),
+                        fileSize = tempFile.length(),
+                        timestamp = System.currentTimeMillis()
+                    )
                 )
 
-                _mergeState.value = PdfGenerationState.Success(uri)
+                _mergeState.value = PdfGenerationState.Success(finalUri)
             } catch (e: Exception) {
                 e.printStackTrace()
                 _mergeState.value = PdfGenerationState.Error(e)

@@ -38,6 +38,10 @@ import com.njagakneai.velapdf.ui.components.NotificationType
 import com.njagakneai.velapdf.ui.components.SortableImageGrid
 import com.njagakneai.velapdf.utils.FileUriHelper
 import com.njagakneai.velapdf.utils.NotificationHelper
+import com.njagakneai.velapdf.ui.viewmodel.ImageToPdfViewModel
+import androidx.hilt.navigation.compose.hiltViewModel
+import java.text.SimpleDateFormat
+import java.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -46,12 +50,17 @@ import kotlinx.coroutines.withContext
 @Composable
 fun ImageToPdfScreen(
     onNavigateBack: () -> Unit,
-    onConversionSuccess: ((String) -> Unit)? = null
+    onConversionSuccess: ((String) -> Unit)? = null,
+    viewModel: ImageToPdfViewModel = hiltViewModel()
 ) {
     var selectedImages by remember { mutableStateOf(emptyList<SelectedImage>()) }
-    var isConverting by remember { mutableStateOf(false) }
-    var conversionProgress by remember { mutableIntStateOf(0) }
+    var outputFileName by remember { mutableStateOf("VelaPDF_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}") }
+    var isSaveAsMode by remember { mutableStateOf(false) }
     var toastNotification by remember { mutableStateOf<NotificationData?>(null) }
+    
+    val conversionState by viewModel.conversionState.collectAsState()
+    val isConverting = conversionState is PdfGenerationState.Loading
+    val conversionProgress = (conversionState as? PdfGenerationState.Loading)?.progress ?: 0
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -109,6 +118,41 @@ fun ImageToPdfScreen(
                     selectedImages = newSelectedImages
                 }
             }
+        }
+    }
+
+    // Save As Launcher
+    val saveAsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/pdf")
+    ) { uri ->
+        if (uri != null) {
+            viewModel.generatePdf(context, selectedImages, outputFileName, uri)
+        }
+    }
+
+    LaunchedEffect(conversionState) {
+        when (val state = conversionState) {
+            is PdfGenerationState.Success -> {
+                NotificationHelper.showPdfCompleteNotification(
+                    context,
+                    "$outputFileName.pdf",
+                    state.uri
+                )
+                toastNotification = NotificationData(
+                    "PDF berhasil dibuat!",
+                    NotificationType.Success
+                )
+                onConversionSuccess?.invoke(Uri.encode(state.uri.toString()))
+                viewModel.resetState()
+            }
+            is PdfGenerationState.Error -> {
+                toastNotification = NotificationData(
+                    state.exception.message ?: "Gagal mengonversi PDF",
+                    NotificationType.Error
+                )
+                viewModel.resetState()
+            }
+            else -> {}
         }
     }
 
@@ -183,59 +227,31 @@ fun ImageToPdfScreen(
                                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
                             )
                             Spacer(modifier = Modifier.height(10.dp))
+                        } else if (selectedImages.isNotEmpty()) {
+                            OutlinedTextField(
+                                value = outputFileName,
+                                onValueChange = { outputFileName = it },
+                                label = { Text("Nama File Output") },
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                                singleLine = true
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Pilih lokasi manual (Save As)", style = MaterialTheme.typography.bodyMedium)
+                                Switch(checked = isSaveAsMode, onCheckedChange = { isSaveAsMode = it })
+                            }
                         }
 
                         Button(
                             onClick = {
                                 if (selectedImages.isEmpty() || isConverting) return@Button
-                                isConverting = true
-                                conversionProgress = 0
-
-                                coroutineScope.launch {
-                                    val repository = PdfRepository(context)
-                                    val outputFileName = "VelaPDF_${System.currentTimeMillis()}"
-
-                                    repository.generatePdf(selectedImages, outputFileName)
-                                        .collect { state ->
-                                            when (state) {
-                                                is PdfGenerationState.Loading -> {
-                                                    conversionProgress = state.progress
-                                                }
-
-                                                is PdfGenerationState.Success -> {
-                                                    isConverting = false
-
-                                                    // System notification
-                                                    NotificationHelper.showPdfCompleteNotification(
-                                                        context,
-                                                        "$outputFileName.pdf",
-                                                        state.uri
-                                                    )
-
-                                                    // In-app toast
-                                                    toastNotification = NotificationData(
-                                                        "PDF berhasil dibuat!",
-                                                        NotificationType.Success
-                                                    )
-
-                                                    // Navigate to SuccessScreen
-                                                    onConversionSuccess?.invoke(
-                                                        Uri.encode(state.uri.toString())
-                                                    )
-                                                }
-
-                                                is PdfGenerationState.Error -> {
-                                                    isConverting = false
-                                                    toastNotification = NotificationData(
-                                                        state.exception.message
-                                                            ?: "Gagal mengonversi PDF",
-                                                        NotificationType.Error
-                                                    )
-                                                }
-
-                                                is PdfGenerationState.Idle -> {}
-                                            }
-                                        }
+                                if (isSaveAsMode) {
+                                    saveAsLauncher.launch(outputFileName)
+                                } else {
+                                    viewModel.generatePdf(context, selectedImages, outputFileName, null)
                                 }
                             },
                             enabled = selectedImages.isNotEmpty() && !isConverting,
