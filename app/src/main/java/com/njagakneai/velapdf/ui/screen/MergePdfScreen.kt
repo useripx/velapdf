@@ -39,18 +39,24 @@ import com.njagakneai.velapdf.ui.components.SortableDocumentList
 import com.njagakneai.velapdf.ui.viewmodel.MergePdfViewModel
 import com.njagakneai.velapdf.utils.NotificationHelper
 import com.njagakneai.velapdf.utils.PdfMergerEngine
+import java.text.SimpleDateFormat
+import java.util.*
+
+import androidx.hilt.navigation.compose.hiltViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MergePdfScreen(
     onNavigateBack: () -> Unit,
     onMergeSuccess: ((String) -> Unit)? = null,
-    viewModel: MergePdfViewModel = viewModel()
+    viewModel: MergePdfViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val mergeState by viewModel.mergeState.collectAsState()
     val isLoadingFiles by viewModel.isLoadingFiles.collectAsState()
     var toastNotification by remember { mutableStateOf<NotificationData?>(null) }
+    var outputFileName by remember { mutableStateOf("VelaPDF_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}") }
+    var isSaveAsMode by remember { mutableStateOf(false) }
 
     val isMerging = mergeState is PdfGenerationState.Loading
     val mergeProgress = (mergeState as? PdfGenerationState.Loading)?.progress ?: 0
@@ -67,6 +73,15 @@ fun MergePdfScreen(
     ) { uris ->
         if (uris.isNotEmpty()) {
             viewModel.addDocuments(context, uris)
+        }
+    }
+
+    // Save As Launcher
+    val saveAsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/pdf")
+    ) { uri ->
+        if (uri != null) {
+            viewModel.startMerge(context, outputFileName, uri)
         }
     }
 
@@ -162,6 +177,22 @@ fun MergePdfScreen(
                                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
                             )
                             Spacer(modifier = Modifier.height(10.dp))
+                        } else if (viewModel.documents.isNotEmpty()) {
+                            OutlinedTextField(
+                                value = outputFileName,
+                                onValueChange = { outputFileName = it },
+                                label = { Text("Nama File Output") },
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
+                                singleLine = true
+                            )
+                            Row(
+                                modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Text("Pilih lokasi manual (Save As)", style = MaterialTheme.typography.bodyMedium)
+                                Switch(checked = isSaveAsMode, onCheckedChange = { isSaveAsMode = it })
+                            }
                         }
 
                         Button(
@@ -175,7 +206,11 @@ fun MergePdfScreen(
                                     )
                                     return@Button
                                 }
-                                viewModel.startMerge(context)
+                                if (isSaveAsMode) {
+                                    saveAsLauncher.launch(outputFileName)
+                                } else {
+                                    viewModel.startMerge(context, outputFileName, null)
+                                }
                             },
                             enabled = viewModel.documents.size >= 2 && !isMerging,
                             modifier = Modifier
