@@ -480,7 +480,7 @@ fun DashboardScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "All file processing happens locally in your browser. We never upload your sensitive data to our servers, ensuring 100% privacy and lightning-fast speeds.",
+                            text = "All file processing happens locally on your device. We never upload your sensitive data to our servers, ensuring 100% privacy and lightning-fast speeds.",
                             style = MaterialTheme.typography.bodyLarge,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -542,12 +542,12 @@ fun ComingSoonCard(title: String, description: String, icon: androidx.compose.ui
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(Color(0xFFF1F5F9))
+                        .background(MaterialTheme.colorScheme.primaryContainer)
                         .padding(horizontal = 8.dp, vertical = 4.dp)
                 ) {
                     Text(
                         text = "TAHAP PENGEMBANGAN",
-                        color = Color(0xFF475569),
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
                         style = MaterialTheme.typography.labelSmall.copy(
                             fontWeight = FontWeight.SemiBold,
                             letterSpacing = 1.sp
