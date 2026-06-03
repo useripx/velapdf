@@ -1,6 +1,0 @@
-{
-  "name": "VelaPDF",
-  "description": "Convert photos, screenshots, and scans into professional PDF documents locally in your browser with 100% privacy and lightning-fast speed.",
-  "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
-}
