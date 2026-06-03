@@ -270,7 +270,7 @@ fun MergePdfScreen(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Gabungkan beberapa file PDF dan gambar menjadi satu dokumen PDF. Atur urutan sesuai kebutuhan.",
+                    text = "Combine multiple PDF files and images into a single PDF document. Arrange the order as needed.",
                     style = MaterialTheme.typography.bodyLarge,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

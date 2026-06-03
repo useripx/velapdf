@@ -424,7 +424,7 @@ fun DashboardScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Gabungkan beberapa file PDF dan gambar menjadi satu dokumen. Atur urutan halaman dengan drag-and-drop.",
+                            text = "Combine multiple PDF files and images into a single document. Arrange page order with drag-and-drop.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
