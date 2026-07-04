@@ -3,12 +3,20 @@ package com.njagakneai.velapdf.ui.screen
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.IntentSenderRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import android.app.Activity
+import android.widget.Toast
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import android.content.Context
+import android.content.ContextWrapper
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.shape.CircleShape
@@ -98,26 +106,29 @@ fun ImageToPdfScreen(
         }
     }
 
-    var tempCameraUri by remember { mutableStateOf<Uri?>(null) }
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            tempCameraUri?.let { uri ->
+    val scannerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            val scanningResult = GmsDocumentScanningResult.fromActivityResultIntent(result.data)
+            scanningResult?.pages?.let { pages ->
                 coroutineScope.launch {
                     val newSelectedImages = selectedImages.toMutableList()
                     withContext(Dispatchers.IO) {
-                        val cachedUri = FileUriHelper.copyUriToCache(context, uri)
-                        val fileName = "Camera_${System.currentTimeMillis()}.jpg"
-                        if (cachedUri != null) {
-                            newSelectedImages.add(
-                                SelectedImage(
-                                    originalUri = uri,
-                                    cachedUri = cachedUri,
-                                    fileName = fileName,
-                                    orderIndex = newSelectedImages.size
+                        pages.forEachIndexed { index, page ->
+                            val uri = page.imageUri
+                            val cachedUri = FileUriHelper.copyUriToCache(context, uri)
+                            val fileName = "Scan_${System.currentTimeMillis()}_$index.jpg"
+                            if (cachedUri != null) {
+                                newSelectedImages.add(
+                                    SelectedImage(
+                                        originalUri = uri,
+                                        cachedUri = cachedUri,
+                                        fileName = fileName,
+                                        orderIndex = newSelectedImages.size
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
                     selectedImages = newSelectedImages
@@ -346,9 +357,27 @@ fun ImageToPdfScreen(
                     
                     Button(
                         onClick = {
-                            val uri = FileUriHelper.getTempCameraUri(context)
-                            tempCameraUri = uri
-                            cameraLauncher.launch(uri)
+                            val options = GmsDocumentScannerOptions.Builder()
+                                .setGalleryImportAllowed(false)
+                                .setPageLimit(50)
+                                .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+                                .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+                                .build()
+                            
+                            val scanner = GmsDocumentScanning.getClient(options)
+                            context.findActivity()?.let { activity ->
+                                scanner.getStartScanIntent(activity)
+                                    .addOnSuccessListener { intentSender ->
+                                        scannerLauncher.launch(
+                                            IntentSenderRequest.Builder(intentSender).build()
+                                        )
+                                    }
+                                    .addOnFailureListener { e ->
+                                        Toast.makeText(context, "Gagal memulai kamera cerdas: ${e.message}", Toast.LENGTH_SHORT).show()
+                                    }
+                            } ?: run {
+                                Toast.makeText(context, "Konteks aplikasi tidak valid", Toast.LENGTH_SHORT).show()
+                            }
                         },
                         enabled = !isConverting,
                         modifier = Modifier.height(56.dp),
@@ -458,4 +487,13 @@ fun ImageToPdfScreen(
             )
         }
     }
+}
+
+fun Context.findActivity(): Activity? {
+    var currentContext = this
+    while (currentContext is ContextWrapper) {
+        if (currentContext is Activity) return currentContext
+        currentContext = currentContext.baseContext
+    }
+    return null
 }
