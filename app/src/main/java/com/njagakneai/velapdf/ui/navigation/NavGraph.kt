@@ -61,14 +61,14 @@ fun AppNavigation(
             enterTransition = {
                 when (initialState.destination.route) {
                     Screen.History.route, Screen.Settings.route -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Down, animationSpec = tween(300))
-                    Screen.ImageToPdf.route, Screen.MergePdf.route -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right, animationSpec = tween(300))
+                    Screen.ImageToPdf.route, Screen.MergePdf.route, Screen.PdfToImage.route -> slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Right, animationSpec = tween(300))
                     else -> fadeIn(animationSpec = tween(300))
                 }
             },
             exitTransition = {
                 when (targetState.destination.route) {
                     Screen.History.route, Screen.Settings.route -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Up, animationSpec = tween(300))
-                    Screen.ImageToPdf.route, Screen.MergePdf.route -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, animationSpec = tween(300))
+                    Screen.ImageToPdf.route, Screen.MergePdf.route, Screen.PdfToImage.route -> slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Left, animationSpec = tween(300))
                     else -> fadeOut(animationSpec = tween(300))
                 }
             }
@@ -79,6 +79,9 @@ fun AppNavigation(
                 },
                 onNavigateToMergePdf = {
                     navController.navigate(Screen.MergePdf.route)
+                },
+                onNavigateToPdfToImage = {
+                    navController.navigate(Screen.PdfToImage.route)
                 },
                 onNavigateToHistory = {
                     navController.navigate(Screen.History.route)
@@ -126,6 +129,26 @@ fun AppNavigation(
                 }
             )
         }
+
+        composable(
+            route = Screen.PdfToImage.route,
+            enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Left, animationSpec = tween(300)) },
+            exitTransition = { fadeOut(animationSpec = tween(300)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(300)) },
+            popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, animationSpec = tween(300)) }
+        ) {
+            com.njagakneai.velapdf.ui.screen.PdfToImageScreen(
+                onNavigateBack = {
+                    navController.popBackStack()
+                },
+                onConvertSuccess = { encodedUri ->
+                    navController.navigate(Screen.Success.createRoute(encodedUri)) {
+                        popUpTo(Screen.PdfToImage.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
 
         composable(
             route = Screen.History.route,
@@ -200,6 +223,7 @@ sealed class Screen(val route: String) {
     object Dashboard : Screen("dashboard")
     object ImageToPdf : Screen("image_to_pdf")
     object MergePdf : Screen("merge_pdf")
+    object PdfToImage : Screen("pdf_to_image")
     object History : Screen("history")
     object Settings : Screen("settings")
     object Converter : Screen("converter")

@@ -34,7 +34,8 @@ class ImageToPdfViewModel @Inject constructor(
         context: Context,
         images: List<SelectedImage>,
         outputFileName: String,
-        saveAsUri: Uri?
+        saveAsUri: Uri?,
+        compressionLevel: com.njagakneai.velapdf.data.model.CompressionLevel
     ) {
         _conversionState.value = PdfGenerationState.Loading(0)
         
@@ -43,13 +44,11 @@ class ImageToPdfViewModel @Inject constructor(
                 // Determine output destination
                 val tempFile = File(context.cacheDir, "${outputFileName}_temp.pdf")
                 
-                val quality = preferencesManager.compressionQuality.first()
-                
                 PdfGenerator.generatePdfFromImages(
                     context = context,
                     images = images,
                     outputFile = tempFile,
-                    compressionQuality = quality,
+                    compressionLevel = compressionLevel,
                     onProgress = { progress ->
                         _conversionState.value = PdfGenerationState.Loading(progress)
                     }

@@ -144,7 +144,12 @@ class MergePdfViewModel @Inject constructor(
     /**
      * Starts the merge process.
      */
-    fun startMerge(context: Context, outputFileName: String, saveAsUri: Uri?) {
+    fun startMerge(
+        context: Context, 
+        outputFileName: String, 
+        saveAsUri: Uri?,
+        compressionLevel: com.njagakneai.velapdf.data.model.CompressionLevel
+    ) {
         val validation = validate()
         if (!validation.isValid) {
             _mergeState.value = PdfGenerationState.Error(
@@ -160,13 +165,11 @@ class MergePdfViewModel @Inject constructor(
                 // Determine output destination
                 val tempFile = File(context.cacheDir, "${outputFileName}_temp.pdf")
                 
-                val quality = preferencesManager.compressionQuality.first()
-                
                 PdfMergerEngine.mergeDocuments(
                     context = context,
                     documents = documents.toList(),
                     outputFile = tempFile,
-                    compressionQuality = quality,
+                    compressionLevel = compressionLevel,
                     onProgress = { progress ->
                         _mergeState.value = PdfGenerationState.Loading(progress)
                     }
