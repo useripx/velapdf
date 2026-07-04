@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "387643434809-6ko9v1of14vn5j3p5omovkna4h3lodl5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.njagakneai.velapdf",
+            "certificate_hash": "c2816d046ebe461b851dcc698cb0c15515bd152e"
+          }
+        },
+        {
           "client_id": "387643434809-d0fchav9icuoevr09a4j3h5s9246msni.apps.googleusercontent.com",
           "client_type": 3
         }
