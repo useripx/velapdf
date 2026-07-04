@@ -77,6 +77,9 @@ dependencies {
     // Coil
     implementation(libs.coil.compose)
 
+    // ML Kit Document Scanner
+    implementation(libs.play.services.mlkit.document.scanner)
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

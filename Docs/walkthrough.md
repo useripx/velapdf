@@ -319,3 +319,29 @@ Fitur **Merge PDF** memungkinkan pengguna menggabungkan beberapa file PDF dan ga
 ## Verifikasi
 - ✅ `assembleDebug` — BUILD SUCCESSFUL
 - ✅ Dokumentasi operasional terpisah terlampir di `Docs/tahap8.md`
+
+---
+
+# Fitur Tambahan: Integrasi Kamera Cerdas ML Kit (Tahap 9)
+
+**Tanggal:** 4 Juli 2026
+**Branch:** `feature/mlkit-scanner`
+**Commit:** `feat: integrate Google ML Kit Document Scanner for offline smart scanning`
+
+---
+
+## 1. Kamera Pintar Layaknya CamScanner
+- **Pemindai Dokumen Cerdas**: Tombol "Kamera" pada halaman _Image to PDF_ kini ditenagai oleh mesin `com.google.android.gms:play-services-mlkit-document-scanner`.
+- **Fitur Otomatis (*On-Device*)**:
+  - Secara otomatis mengenali sudut dan batas tepi kertas saat diarahkan.
+  - Memperbaiki gambar yang miring (koreksi perspektif) menjadi lurus layaknya hasil pindai (*scan*) mesin flatbed asli.
+  - Menyediakan filter otomatis untuk menjernihkan teks dan membersihkan latar belakang (membuang bayangan).
+- **Proses Murni Offline**: Seluruh proses deteksi dan filter berjalan di dalam mesin HP pengguna melalui perantara Google Play Services, **tanpa** mengirim foto ke cloud.
+
+## 2. Pemasukan Massal (Batch Import)
+- Mesin kamera baru ini tidak lagi terbatas menjepret 1 foto. Pengguna bisa terus menekan tombol potret (hingga batas maskimal 50 halaman) lalu mengonfirmasi hasilnya.
+- Seluruh halaman yang dipindai akan dikembalikan dalam format kumpulan _URI_ yang langsung dimasukkan ke dalam daftar grid pratinjau `ImageToPdfScreen` sebagai objek `SelectedImage`.
+
+## Verifikasi
+- ✅ `assembleDebug` — BUILD SUCCESSFUL
+- ✅ Semua fungsi kamera lama telah dicopot bersih dan digantikan oleh peluncur baru `GmsDocumentScanning.getClient()`.
