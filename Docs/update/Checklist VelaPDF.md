@@ -2,9 +2,9 @@
 **(Keamanan Lapis Ganda: AI CNN + Kriptografi RSA/SHA-256)
 
 ### Fase 1: Persiapan Dasar & Sistem Akun (Aplikasi)
-- [ ] **1. Memantapkan Fitur Dasar:** Menyelesaikan fungsionalitas utama aplikasi Vela PDF (Pemindai *Picture to PDF*) yang sudah dikembangkan sebelumnya.
-- [ ] **2. Integrasi Firebase Auth:** Menambahkan Firebase Authentication untuk fitur *Login/Register* agar sistem memiliki data nama dan *email* pengguna.
-- [ ] **3. Desain UI/UX:** Membangun antarmuka dasar untuk fitur utama, khususnya tombol "Tandatangani" dan "Cek Keaslian".
+- [x] **1. Memantapkan Fitur Dasar:** Menyelesaikan fungsionalitas utama aplikasi Vela PDF (Pemindai *Picture to PDF*) yang sudah dikembangkan sebelumnya.
+- [x] **2. Integrasi Firebase Auth:** Menambahkan Firebase Authentication untuk fitur *Login/Register* agar sistem memiliki data nama dan *email* pengguna.
+- [x] **3. Desain UI/UX:** Membangun antarmuka dasar untuk fitur utama, khususnya tombol "Tandatangani" dan "Cek Keaslian".
 
 ### Fase 2: Pembuatan AI Deteksi Pemalsuan Gambar (Lapis Keamanan 1)
 - [ ] **4. Pengumpulan Data Asli:** Mengumpulkan 750 gambar dokumen ASLI (KTP, Nota, Ijazah, dll) hasil jepretan kamera murni.

@@ -69,6 +69,9 @@ VelaPDF follows the **MVVM (Model-View-ViewModel)** architecture pattern with cl
 | **Jetpack Compose**   | Modern UI toolkit            |
 | **Material Design 3** | Design system                |
 | **MVVM**              | Architecture pattern         |
+| **Firebase Auth**     | Authentication (Google Sign-In)|
+| **Credential Manager**| Android 14+ Identity API     |
+| **iText7 Core**       | PDF processing engine        |
 | **Gradle KTS**        | Build system                 |
 
 ---
@@ -115,7 +118,16 @@ cd velapdf
 3. Cari dan pilih folder `velapdf` hasil clone tadi, lalu klik **OK**.
 4. **Tunggu (Penting):** Android Studio akan mulai melakukan proses *Gradle Sync* dan mendownload semua hal yang dibutuhkan (library, dependencies, dll). Tunggu sampai ada tulisan "Sync System Completed" dan tidak ada loading bar di pojok kanan bawah. Pastikan internetmu aktif dan stabil.
 
-### Langkah 4: Jalankan Aplikasi
+### Langkah 4: Setup Firebase (google-services.json)
+Karena aplikasi ini menggunakan **Google Sign-In**, Anda perlu mendaftarkan SHA-1 komputer lokal Anda ke Firebase:
+1. Jalankan `./gradlew signingReport` di terminal Android Studio Anda.
+2. Salin kode `SHA1` dari varian `debug`.
+3. Buka proyek Firebase Anda (atau buat baru) dan daftarkan aplikasi Android Anda (`com.njagakneai.velapdf`).
+4. Tambahkan sidik jari SHA1 tersebut ke pengaturan aplikasi Firebase.
+5. Unduh file `google-services.json` dan letakkan di dalam folder `app/` di proyek Anda.
+6. (Opsional) Salin *Web Client ID* dari Firebase, lalu buat file `app/src/main/res/values/strings.xml` berisi `<string name="google_web_client_id">YOUR_CLIENT_ID</string>`.
+
+### Langkah 5: Jalankan Aplikasi
 
 1. Colokkan HP Android ke laptop/PC (pastikan mode *Developer Options* & *USB Debugging* di HP sudah aktif) **ATAU** jalankan Emulator bawaan dari Android Studio.
 2. Di pojok atas Android Studio, pastikan nama modulnya terpilih sebagai `app` dan target devicenya sudah muncul.

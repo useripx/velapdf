@@ -374,6 +374,9 @@ Fitur **Merge PDF** memungkinkan pengguna menggabungkan beberapa file PDF dan ga
 - Alur aplikasi diatur ulang: *Splash Screen* akan mengecek sesi otentikasi. Jika belum *login*, diarahkan ke `LoginScreen`. Jika sudah, masuk ke `DashboardScreen`.
 - Tombol *Keluar* (*Logout*) disematkan di menu Pengaturan (*Settings*), lengkap dengan tampilan nama email pengguna yang sedang aktif.
 
+## 4. Perbaikan Bug (Hotfix)
+- **Kontras Tema Terang (Light Theme)**: Memperbaiki *bug* warna `primaryContainer` pada `Color.kt` di Mode Terang yang sebelumnya menggunakan warna gelap dari Mode Gelap. Kini *badge* "TAHAP PENGEMBANGAN" dapat terbaca dengan jelas (teks gelap di atas *background* terang).
+
 ## Verifikasi
 - ✅ `assembleDebug` — BUILD SUCCESSFUL
 - ✅ Dependensi iText7 dan Firebase Auth diunduh dan dikompilasi tanpa *error*.
