@@ -11,12 +11,15 @@ import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
+import com.njagakneai.velapdf.data.model.CompressionLevel
+import java.io.ByteArrayOutputStream
+
 object PdfGenerator {
     suspend fun generatePdfFromImages(
         context: Context,
         images: List<SelectedImage>,
         outputFile: File,
-        compressionQuality: String,
+        compressionLevel: CompressionLevel,
         onProgress: suspend (Int) -> Unit
     ): File = withContext(Dispatchers.IO) {
         if (images.isEmpty()) throw IllegalArgumentException("No images to convert")
@@ -24,24 +27,27 @@ object PdfGenerator {
         val pdfDocument = PdfDocument()
 
         try {
-            val scaleFactor = when (compressionQuality) {
-                "Sedang" -> 0.7f
-                "Rendah" -> 0.4f
-                else -> 1.0f
-            }
-
             images.forEachIndexed { index, selectedImage ->
                 var bitmap = getBitmapFromUri(context, selectedImage)
                 
-                if (scaleFactor < 1.0f) {
-                    val scaledWidth = (bitmap.width * scaleFactor).toInt().coerceAtLeast(1)
-                    val scaledHeight = (bitmap.height * scaleFactor).toInt().coerceAtLeast(1)
-                    val scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledWidth, scaledHeight, true)
+                val quality = if (compressionLevel == CompressionLevel.SUPER) 60 else 75
+                
+                if (compressionLevel == CompressionLevel.SUPER && bitmap.width > 1500) {
+                    val ratio = 1500f / bitmap.width
+                    val scaledHeight = (bitmap.height * ratio).toInt()
+                    val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 1500, scaledHeight, true)
                     if (scaledBitmap != bitmap) {
                         bitmap.recycle()
                         bitmap = scaledBitmap
                     }
                 }
+                
+                val baos = ByteArrayOutputStream()
+                bitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos)
+                bitmap.recycle() // free memory of intermediate bitmap
+                
+                val compressedArray = baos.toByteArray()
+                bitmap = BitmapFactory.decodeByteArray(compressedArray, 0, compressedArray.size)
                 
                 val pageInfo = PdfDocument.PageInfo.Builder(bitmap.width, bitmap.height, index + 1).create()
                 val page = pdfDocument.startPage(pageInfo)

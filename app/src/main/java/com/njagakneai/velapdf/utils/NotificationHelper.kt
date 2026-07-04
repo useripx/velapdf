@@ -56,33 +56,49 @@ object NotificationHelper {
             }
         }
 
-        // Intent to open the PDF with an external viewer
+        val mimeType = when {
+            fileName.endsWith(".zip", ignoreCase = true) -> "application/zip"
+            fileName.endsWith(".pdf", ignoreCase = true) -> "application/pdf"
+            fileName.endsWith(".jpg", ignoreCase = true) || fileName.endsWith(".jpeg", ignoreCase = true) || fileName.endsWith(".png", ignoreCase = true) || fileName.endsWith(".webp", ignoreCase = true) -> "image/*"
+            else -> "vnd.android.document/directory"
+        }
+        val safeUri = FileUriHelper.getSafeUri(context, pdfUri)
+        // Intent to open the file with an external viewer
         val viewIntent = Intent(Intent.ACTION_VIEW).apply {
-            setDataAndType(pdfUri, "application/pdf")
+            setDataAndType(safeUri, mimeType)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
 
-        val pendingIntent = PendingIntent.getActivity(
-            context,
-            0,
-            viewIntent,
-            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
-        )
+        val pendingIntent = try {
+            PendingIntent.getActivity(
+                context,
+                0,
+                viewIntent,
+                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+            )
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
 
-        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+        val notificationBuilder = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("PDF Berhasil Dibuat")
+            .setContentTitle("Konversi Selesai")
             .setContentText("$fileName siap dibuka")
             .setStyle(
                 NotificationCompat.BigTextStyle()
-                    .bigText("File \"$fileName\" telah berhasil dikonversi menjadi PDF. Ketuk untuk membuka.")
+                    .bigText("File \"$fileName\" telah berhasil diproses. Ketuk untuk membuka.")
             )
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-            .setContentIntent(pendingIntent)
             .setAutoCancel(true)
             .setCategory(NotificationCompat.CATEGORY_STATUS)
-            .build()
+
+        if (pendingIntent != null) {
+            notificationBuilder.setContentIntent(pendingIntent)
+        }
+
+        val notification = notificationBuilder.build()
 
         val notificationManager =
             context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager

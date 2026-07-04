@@ -35,7 +35,7 @@ class PdfRepository(private val context: Context) {
                 context = context,
                 images = images,
                 outputFile = outputFile,
-                compressionQuality = "Tinggi",
+                compressionLevel = com.njagakneai.velapdf.data.model.CompressionLevel.BIASA,
                 onProgress = { progress ->
                     trySend(PdfGenerationState.Loading(progress))
                 }
