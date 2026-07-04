@@ -295,3 +295,27 @@ Fitur **Merge PDF** memungkinkan pengguna menggabungkan beberapa file PDF dan ga
 ## Verifikasi
 - ✅ `assembleDebug` — BUILD SUCCESSFUL (100% tanpa error)
 - ✅ Perubahan telah di-*commit* ke Git dan di-*push* untuk di-*Pull Request*.
+
+---
+
+# Fitur Tambahan: PDF to Image Converter (Tahap 8)
+
+**Tanggal:** 4 Juli 2026
+**Branch:** `feature/pdftoimage`
+**Commit:** `feat: implement PDF to Image feature with ZIP compression and safe URI intents`
+
+---
+
+## 1. Konversi Pintar (Smart Conversion)
+- **Deteksi Halaman Otomatis**: Jika PDF hanya berisi 1 halaman, mode ZIP otomatis mati dan akan langsung diekspor menjadi single image. Sebaliknya, PDF multi-halaman akan mengaktifkan opsi ZIP secara default.
+- **Output Beragam Format**: Mendukung ekstraksi berkualitas tinggi melalui `android.graphics.pdf.PdfRenderer` menjadi format `JPG`, `PNG`, dan `WebP`.
+- **Ekspor Non-ZIP Multi-Halaman**: Apabila opsi ZIP dimatikan pada PDF yang memiliki banyak halaman, aplikasi dengan cerdas akan membuat "Folder" (Direktori) baru di dalam penyimpanan dan mengekstrak setiap gambarnya ke dalam direktori tersebut.
+
+## 2. Peningkatan Keamanan File Intent (URI Exposure)
+- **FileProvider Integration (`FileUriHelper.kt`)**: Seluruh interaksi pembukaan dan pembagian file pada menu penyelesaian *SuccessScreen* sudah diperkuat menggunakan `FileProvider.getUriForFile()` agar kompatibel secara utuh di Android 13+.
+- **Try-Catch Global**: Modifikasi blok intent di `SuccessScreen.kt`, `FileShareHelper.kt`, serta `NotificationHelper.kt` agar sistem mencegah _Force Close_ bilamana perangkat tidak mengenali URI.
+- **Pendeteksi Direktori (Mime-Type)**: `SuccessScreen` mampu membaca `vnd.android.document/directory` dan mengarahkan pengguna secara mulus ke File Manager sistem apabila file yang dikonversi berupa "Folder".
+
+## Verifikasi
+- ✅ `assembleDebug` — BUILD SUCCESSFUL
+- ✅ Dokumentasi operasional terpisah terlampir di `Docs/tahap8.md`

@@ -64,4 +64,16 @@ object FileUriHelper {
             tempFile
         )
     }
+
+    fun getSafeUri(context: Context, uri: Uri): Uri {
+        return if (uri.scheme == "file") {
+            try {
+                FileProvider.getUriForFile(context, "${context.packageName}.provider", File(uri.path!!))
+            } catch (e: Exception) {
+                uri
+            }
+        } else {
+            uri
+        }
+    }
 }

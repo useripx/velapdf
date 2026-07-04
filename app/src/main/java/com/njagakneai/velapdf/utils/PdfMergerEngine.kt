@@ -102,7 +102,7 @@ object PdfMergerEngine {
         context: Context,
         documents: List<MergeableDocument>,
         outputFile: File,
-        compressionQuality: String,
+        compressionLevel: com.njagakneai.velapdf.data.model.CompressionLevel,
         onProgress: suspend (Int) -> Unit
     ): File = withContext(Dispatchers.IO) {
         val validation = validate(documents)
@@ -114,19 +114,8 @@ object PdfMergerEngine {
         var processedPages = 0
         val pdfDocument = PdfDocument()
 
-        val imageScaleFactor = when (compressionQuality) {
-            "Sedang" -> 0.7f
-            "Rendah" -> 0.4f
-            else -> 1.0f
-        }
-
-        // For PDFs, we previously used scale = 2 for high quality.
-        // We can map it: Tinggi=2.0, Sedang=1.5, Rendah=1.0
-        val pdfScaleFactor = when (compressionQuality) {
-            "Sedang" -> 1.5f
-            "Rendah" -> 1.0f
-            else -> 2.0f
-        }
+        val quality = if (compressionLevel == com.njagakneai.velapdf.data.model.CompressionLevel.SUPER) 60 else 75
+        val scalePdf = if (compressionLevel == com.njagakneai.velapdf.data.model.CompressionLevel.SUPER) 1.0f else 2.0f // Render PDF at 1x for Super, 2x for Biasa
 
         try {
             for (doc in documents) {
@@ -134,18 +123,25 @@ object PdfMergerEngine {
                     DocumentType.IMAGE -> {
                         var bitmap = loadImageBitmap(context, doc)
                         
-                        if (imageScaleFactor < 1.0f) {
-                            val scaledWidth = (bitmap.width * imageScaleFactor).toInt().coerceAtLeast(1)
-                            val scaledHeight = (bitmap.height * imageScaleFactor).toInt().coerceAtLeast(1)
-                            val scaledBitmap = Bitmap.createScaledBitmap(bitmap, scaledWidth, scaledHeight, true)
+                        if (compressionLevel == com.njagakneai.velapdf.data.model.CompressionLevel.SUPER && bitmap.width > 1500) {
+                            val ratio = 1500f / bitmap.width
+                            val scaledHeight = (bitmap.height * ratio).toInt()
+                            val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 1500, scaledHeight, true)
                             if (scaledBitmap != bitmap) {
                                 bitmap.recycle()
                                 bitmap = scaledBitmap
                             }
                         }
 
-                        addBitmapPage(pdfDocument, bitmap, processedPages + 1)
-                        bitmap.recycle()
+                        val baos = java.io.ByteArrayOutputStream()
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos)
+                        bitmap.recycle() // free memory
+                        
+                        val compressedArray = baos.toByteArray()
+                        val finalBitmap = BitmapFactory.decodeByteArray(compressedArray, 0, compressedArray.size)
+
+                        addBitmapPage(pdfDocument, finalBitmap, processedPages + 1)
+                        finalBitmap.recycle()
                         processedPages++
                         onProgress(((processedPages * 100) / totalPages).coerceAtMost(100))
                     }
@@ -157,24 +153,41 @@ object PdfMergerEngine {
                             for (pageIndex in 0 until renderer.pageCount) {
                                 val page = renderer.openPage(pageIndex)
                                 
-                                val bitmapWidth = (page.width * pdfScaleFactor).toInt().coerceAtLeast(1)
-                                val bitmapHeight = (page.height * pdfScaleFactor).toInt().coerceAtLeast(1)
-                                val bitmap = Bitmap.createBitmap(
+                                val bitmapWidth = (page.width * scalePdf).toInt().coerceAtLeast(1)
+                                val bitmapHeight = (page.height * scalePdf).toInt().coerceAtLeast(1)
+                                var bitmap = Bitmap.createBitmap(
                                     bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888
                                 )
                                 // Fill with white background
                                 val canvas = Canvas(bitmap)
                                 canvas.drawColor(Color.WHITE)
                                 
-                                // Setup transform matrix if scale != 1.0 (wait, PdfRenderer page.render handles scaling via bitmap size!)
                                 page.render(
                                     bitmap, null, null,
                                     PdfRenderer.Page.RENDER_MODE_FOR_PRINT
                                 )
                                 page.close()
 
-                                addBitmapPage(pdfDocument, bitmap, processedPages + 1)
-                                bitmap.recycle()
+                                // Apply compression to PDF page too
+                                if (compressionLevel == com.njagakneai.velapdf.data.model.CompressionLevel.SUPER && bitmap.width > 1500) {
+                                    val ratio = 1500f / bitmap.width
+                                    val scaledHeight = (bitmap.height * ratio).toInt()
+                                    val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 1500, scaledHeight, true)
+                                    if (scaledBitmap != bitmap) {
+                                        bitmap.recycle()
+                                        bitmap = scaledBitmap
+                                    }
+                                }
+
+                                val baos = java.io.ByteArrayOutputStream()
+                                bitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos)
+                                bitmap.recycle() // free memory
+                                
+                                val compressedArray = baos.toByteArray()
+                                val finalBitmap = BitmapFactory.decodeByteArray(compressedArray, 0, compressedArray.size)
+
+                                addBitmapPage(pdfDocument, finalBitmap, processedPages + 1)
+                                finalBitmap.recycle()
                                 processedPages++
                                 onProgress(
                                     ((processedPages * 100) / totalPages).coerceAtMost(100)

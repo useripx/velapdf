@@ -43,6 +43,8 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.njagakneai.velapdf.data.model.CompressionLevel
+import com.njagakneai.velapdf.ui.components.CompressionDialog
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +59,9 @@ fun MergePdfScreen(
     var toastNotification by remember { mutableStateOf<NotificationData?>(null) }
     var outputFileName by remember { mutableStateOf("VelaPDF_${SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())}") }
     var isSaveAsMode by remember { mutableStateOf(false) }
+
+    var showCompressionDialog by remember { mutableStateOf(false) }
+    var pendingCompressionLevel by remember { mutableStateOf(CompressionLevel.BIASA) }
 
     val isMerging = mergeState is PdfGenerationState.Loading
     val mergeProgress = (mergeState as? PdfGenerationState.Loading)?.progress ?: 0
@@ -81,7 +86,7 @@ fun MergePdfScreen(
         contract = ActivityResultContracts.CreateDocument("application/pdf")
     ) { uri ->
         if (uri != null) {
-            viewModel.startMerge(context, outputFileName, uri)
+            viewModel.startMerge(context, outputFileName, uri, pendingCompressionLevel)
         }
     }
 
@@ -206,11 +211,7 @@ fun MergePdfScreen(
                                     )
                                     return@Button
                                 }
-                                if (isSaveAsMode) {
-                                    saveAsLauncher.launch(outputFileName)
-                                } else {
-                                    viewModel.startMerge(context, outputFileName, null)
-                                }
+                                showCompressionDialog = true
                             },
                             enabled = viewModel.documents.size >= 2 && !isMerging,
                             modifier = Modifier
@@ -434,5 +435,20 @@ fun MergePdfScreen(
             onDismiss = { toastNotification = null },
             modifier = Modifier.align(Alignment.TopCenter)
         )
+
+        if (showCompressionDialog) {
+            CompressionDialog(
+                onDismiss = { showCompressionDialog = false },
+                onConfirm = { level ->
+                    showCompressionDialog = false
+                    pendingCompressionLevel = level
+                    if (isSaveAsMode) {
+                        saveAsLauncher.launch(outputFileName)
+                    } else {
+                        viewModel.startMerge(context, outputFileName, null, level)
+                    }
+                }
+            )
+        }
     }
 }

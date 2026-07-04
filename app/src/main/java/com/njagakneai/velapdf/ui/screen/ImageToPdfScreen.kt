@@ -40,6 +40,8 @@ import com.njagakneai.velapdf.utils.FileUriHelper
 import com.njagakneai.velapdf.utils.NotificationHelper
 import com.njagakneai.velapdf.ui.viewmodel.ImageToPdfViewModel
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.njagakneai.velapdf.data.model.CompressionLevel
+import com.njagakneai.velapdf.ui.components.CompressionDialog
 import java.text.SimpleDateFormat
 import java.util.*
 import kotlinx.coroutines.Dispatchers
@@ -58,6 +60,9 @@ fun ImageToPdfScreen(
     var isSaveAsMode by remember { mutableStateOf(false) }
     var toastNotification by remember { mutableStateOf<NotificationData?>(null) }
     
+    var showCompressionDialog by remember { mutableStateOf(false) }
+    var pendingCompressionLevel by remember { mutableStateOf(CompressionLevel.BIASA) }
+
     val conversionState by viewModel.conversionState.collectAsState()
     val isConverting = conversionState is PdfGenerationState.Loading
     val conversionProgress = (conversionState as? PdfGenerationState.Loading)?.progress ?: 0
@@ -126,7 +131,7 @@ fun ImageToPdfScreen(
         contract = ActivityResultContracts.CreateDocument("application/pdf")
     ) { uri ->
         if (uri != null) {
-            viewModel.generatePdf(context, selectedImages, outputFileName, uri)
+            viewModel.generatePdf(context, selectedImages, outputFileName, uri, pendingCompressionLevel)
         }
     }
 
@@ -248,11 +253,7 @@ fun ImageToPdfScreen(
                         Button(
                             onClick = {
                                 if (selectedImages.isEmpty() || isConverting) return@Button
-                                if (isSaveAsMode) {
-                                    saveAsLauncher.launch(outputFileName)
-                                } else {
-                                    viewModel.generatePdf(context, selectedImages, outputFileName, null)
-                                }
+                                showCompressionDialog = true
                             },
                             enabled = selectedImages.isNotEmpty() && !isConverting,
                             modifier = Modifier
@@ -441,5 +442,20 @@ fun ImageToPdfScreen(
             onDismiss = { toastNotification = null },
             modifier = Modifier.align(Alignment.TopCenter)
         )
+
+        if (showCompressionDialog) {
+            CompressionDialog(
+                onDismiss = { showCompressionDialog = false },
+                onConfirm = { level ->
+                    showCompressionDialog = false
+                    pendingCompressionLevel = level
+                    if (isSaveAsMode) {
+                        saveAsLauncher.launch(outputFileName)
+                    } else {
+                        viewModel.generatePdf(context, selectedImages, outputFileName, null, level)
+                    }
+                }
+            )
+        }
     }
 }
