@@ -12,6 +12,8 @@ import com.njagakneai.velapdf.ui.screen.MergePdfScreen
 import com.njagakneai.velapdf.ui.screen.PermissionsScreen
 import com.njagakneai.velapdf.ui.screen.SplashScreen
 import com.njagakneai.velapdf.ui.screen.HistoryScreen
+import com.njagakneai.velapdf.ui.screen.LoginScreen
+import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -49,8 +51,24 @@ fun AppNavigation(
         ) {
             PermissionsScreen(
                 onPermissionsGranted = {
-                    navController.navigate(Screen.Dashboard.route) {
+                    val isLoggedIn = FirebaseAuth.getInstance().currentUser != null
+                    val destination = if (isLoggedIn) Screen.Dashboard.route else Screen.Login.route
+                    navController.navigate(destination) {
                         popUpTo(Screen.Permissions.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(
+            route = Screen.Login.route,
+            enterTransition = { fadeIn(animationSpec = tween(300)) },
+            exitTransition = { fadeOut(animationSpec = tween(300)) }
+        ) {
+            LoginScreen(
+                onNavigateToDashboard = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 }
             )
@@ -173,7 +191,14 @@ fun AppNavigation(
         ) {
             SettingsScreen(
                 onNavigateBack = {
-                    navController.popBackStack()
+                    val isLoggedIn = FirebaseAuth.getInstance().currentUser != null
+                    if (!isLoggedIn) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    } else {
+                        navController.popBackStack()
+                    }
                 }
             )
         }
@@ -220,6 +245,7 @@ fun AppNavigation(
 sealed class Screen(val route: String) {
     object Splash : Screen("splash")
     object Permissions : Screen("permissions")
+    object Login : Screen("login")
     object Dashboard : Screen("dashboard")
     object ImageToPdf : Screen("image_to_pdf")
     object MergePdf : Screen("merge_pdf")

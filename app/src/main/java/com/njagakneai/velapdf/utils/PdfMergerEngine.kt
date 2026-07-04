@@ -3,11 +3,15 @@ package com.njagakneai.velapdf.utils
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.pdf.PdfDocument
 import android.graphics.pdf.PdfRenderer
-import android.os.ParcelFileDescriptor
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfReader
+import com.itextpdf.kernel.pdf.PdfWriter
+import com.itextpdf.kernel.utils.PdfMerger
+import com.itextpdf.layout.Document
+import com.itextpdf.layout.element.Image
+import com.itextpdf.io.image.ImageDataFactory
+import com.itextpdf.kernel.geom.PageSize
 import com.njagakneai.velapdf.data.model.DocumentType
 import com.njagakneai.velapdf.data.model.MergeableDocument
 import kotlinx.coroutines.Dispatchers
@@ -112,10 +116,12 @@ object PdfMergerEngine {
 
         val totalPages = validation.totalPages
         var processedPages = 0
-        val pdfDocument = PdfDocument()
+        
+        val pdfWriter = PdfWriter(outputFile)
+        val mainPdfDoc = PdfDocument(pdfWriter)
+        val merger = PdfMerger(mainPdfDoc)
 
         val quality = if (compressionLevel == com.njagakneai.velapdf.data.model.CompressionLevel.SUPER) 60 else 75
-        val scalePdf = if (compressionLevel == com.njagakneai.velapdf.data.model.CompressionLevel.SUPER) 1.0f else 2.0f // Render PDF at 1x for Super, 2x for Biasa
 
         try {
             for (doc in documents) {
@@ -138,86 +144,51 @@ object PdfMergerEngine {
                         bitmap.recycle() // free memory
                         
                         val compressedArray = baos.toByteArray()
-                        val finalBitmap = BitmapFactory.decodeByteArray(compressedArray, 0, compressedArray.size)
-
-                        addBitmapPage(pdfDocument, finalBitmap, processedPages + 1)
-                        finalBitmap.recycle()
+                        
+                        // Create a temporary PDF in memory for the image
+                        val baosPdf = java.io.ByteArrayOutputStream()
+                        val tempPdfDoc = PdfDocument(PdfWriter(baosPdf))
+                        val tempDoc = Document(tempPdfDoc)
+                        tempDoc.setMargins(0f, 0f, 0f, 0f)
+                        
+                        val imageData = ImageDataFactory.create(compressedArray)
+                        val pdfImage = Image(imageData)
+                        val pageSize = PageSize(pdfImage.imageWidth, pdfImage.imageHeight)
+                        tempPdfDoc.addNewPage(pageSize)
+                        pdfImage.setFixedPosition(1, 0f, 0f)
+                        tempDoc.add(pdfImage)
+                        tempDoc.close()
+                        
+                        // Merge the temp PDF
+                        val srcPdfDoc = PdfDocument(PdfReader(java.io.ByteArrayInputStream(baosPdf.toByteArray())))
+                        merger.merge(srcPdfDoc, 1, srcPdfDoc.numberOfPages)
+                        srcPdfDoc.close()
+                        
                         processedPages++
                         onProgress(((processedPages * 100) / totalPages).coerceAtMost(100))
                     }
 
                     DocumentType.PDF -> {
-                        val fd = context.contentResolver.openFileDescriptor(doc.cachedUri, "r")
-                        fd?.use { fileDescriptor ->
-                            val renderer = PdfRenderer(fileDescriptor)
-                            for (pageIndex in 0 until renderer.pageCount) {
-                                val page = renderer.openPage(pageIndex)
-                                
-                                val bitmapWidth = (page.width * scalePdf).toInt().coerceAtLeast(1)
-                                val bitmapHeight = (page.height * scalePdf).toInt().coerceAtLeast(1)
-                                var bitmap = Bitmap.createBitmap(
-                                    bitmapWidth, bitmapHeight, Bitmap.Config.ARGB_8888
-                                )
-                                // Fill with white background
-                                val canvas = Canvas(bitmap)
-                                canvas.drawColor(Color.WHITE)
-                                
-                                page.render(
-                                    bitmap, null, null,
-                                    PdfRenderer.Page.RENDER_MODE_FOR_PRINT
-                                )
-                                page.close()
-
-                                // Apply compression to PDF page too
-                                if (compressionLevel == com.njagakneai.velapdf.data.model.CompressionLevel.SUPER && bitmap.width > 1500) {
-                                    val ratio = 1500f / bitmap.width
-                                    val scaledHeight = (bitmap.height * ratio).toInt()
-                                    val scaledBitmap = Bitmap.createScaledBitmap(bitmap, 1500, scaledHeight, true)
-                                    if (scaledBitmap != bitmap) {
-                                        bitmap.recycle()
-                                        bitmap = scaledBitmap
-                                    }
-                                }
-
-                                val baos = java.io.ByteArrayOutputStream()
-                                bitmap.compress(Bitmap.CompressFormat.JPEG, quality, baos)
-                                bitmap.recycle() // free memory
-                                
-                                val compressedArray = baos.toByteArray()
-                                val finalBitmap = BitmapFactory.decodeByteArray(compressedArray, 0, compressedArray.size)
-
-                                addBitmapPage(pdfDocument, finalBitmap, processedPages + 1)
-                                finalBitmap.recycle()
-                                processedPages++
-                                onProgress(
-                                    ((processedPages * 100) / totalPages).coerceAtMost(100)
-                                )
-                            }
-                            renderer.close()
+                        val inputStream = context.contentResolver.openInputStream(doc.cachedUri)
+                        if (inputStream != null) {
+                            val srcPdfDoc = PdfDocument(PdfReader(inputStream))
+                            val pagesToMerge = srcPdfDoc.numberOfPages
+                            merger.merge(srcPdfDoc, 1, pagesToMerge)
+                            srcPdfDoc.close()
+                            inputStream.close()
+                            
+                            processedPages += pagesToMerge
+                            onProgress(((processedPages * 100) / totalPages).coerceAtMost(100))
                         }
                     }
                 }
             }
 
-            val outputStream = FileOutputStream(outputFile)
-            pdfDocument.writeTo(outputStream)
-            outputStream.flush()
-            outputStream.close()
-
             outputFile
         } finally {
-            pdfDocument.close()
+            merger.close()
+            mainPdfDoc.close()
         }
-    }
-
-    /**
-     * Adds a bitmap as a page to the PdfDocument.
-     */
-    private fun addBitmapPage(pdfDocument: PdfDocument, bitmap: Bitmap, pageNumber: Int) {
-        val pageInfo = PdfDocument.PageInfo.Builder(bitmap.width, bitmap.height, pageNumber).create()
-        val page = pdfDocument.startPage(pageInfo)
-        page.canvas.drawBitmap(bitmap, 0f, 0f, null)
-        pdfDocument.finishPage(page)
     }
 
     /**

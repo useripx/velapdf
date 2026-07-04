@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
+import com.google.firebase.auth.FirebaseAuth
 
 @HiltViewModel
 class SplashViewModel @Inject constructor(
@@ -31,10 +32,14 @@ class SplashViewModel @Inject constructor(
             delay(2000)
             
             val isPermissionsGranted = preferencesManager.isPermissionsGranted.first()
-            if (isPermissionsGranted) {
-                _nextDestination.value = Screen.Dashboard.route
-            } else {
+            val isLoggedIn = FirebaseAuth.getInstance().currentUser != null
+            
+            if (!isPermissionsGranted) {
                 _nextDestination.value = Screen.Permissions.route
+            } else if (!isLoggedIn) {
+                _nextDestination.value = Screen.Login.route
+            } else {
+                _nextDestination.value = Screen.Dashboard.route
             }
         }
     }

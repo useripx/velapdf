@@ -15,8 +15,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.automirrored.filled.MergeType
@@ -526,17 +526,17 @@ fun DashboardScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Coming Soon Cards
+                // Coming Soon Cards (Fitur Keamanan Fase Selanjutnya)
                 ComingSoonCard(
-                    title = "Word to PDF",
-                    description = "Preserve formatting and fonts perfectly.",
-                    icon = Icons.Default.Edit
+                    title = "Tandatangani",
+                    description = "Amankan dokumen Anda dengan tanda tangan digital tersertifikasi dan kriptografi RSA & SHA-256.",
+                    icon = Icons.Default.Lock
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 ComingSoonCard(
-                    title = "Excel to PDF",
-                    description = "Convert spreadsheets into structured tables.",
-                    icon = Icons.Default.DateRange
+                    title = "Cek Keaslian",
+                    description = "Verifikasi keaslian dokumen PDF dan deteksi manipulasi gambar menggunakan AI.",
+                    icon = Icons.Default.CheckCircle
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))

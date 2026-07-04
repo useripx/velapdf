@@ -345,3 +345,36 @@ Fitur **Merge PDF** memungkinkan pengguna menggabungkan beberapa file PDF dan ga
 ## Verifikasi
 - ✅ `assembleDebug` — BUILD SUCCESSFUL
 - ✅ Semua fungsi kamera lama telah dicopot bersih dan digantikan oleh peluncur baru `GmsDocumentScanning.getClient()`.
+
+---
+
+# Fitur Tambahan: Migrasi Mesin PDF & UI Dashboard (Tahap 10)
+
+**Tanggal:** 4 Juli 2026
+**Branch:** `feature/fase1-update`
+**Tujuan Utama:** Mempersiapkan aplikasi untuk Fase Kriptografi.
+
+---
+
+## 1. Migrasi ke iText7 Core
+- Sesuai dengan instruksi *Checklist VelaPDF*, aplikasi ini tidak lagi merakit PDF menggunakan API bawaan Android (`android.graphics.pdf.PdfDocument`).
+- Sistem pembuatan (Image to PDF) dan penggabungan (Merge PDF) kini sepenuhnya disokong oleh mesin canggih **iText7 Core**.
+- Keuntungan: iText7 menjamin stabilitas *file* PDF agar tidak *corrupt* dan membuka jalan mutlak untuk penyisipan Sertifikat Digital X.509 pada fase berikutnya.
+- Detail legalitas akademik tercatat di `Docs/update/Lisensi_iText7.md`.
+
+## 2. Pembaruan Antarmuka Dashboard
+- Menu placeholder di bawah (yang semula "Word to PDF" dan "Excel to PDF") telah dirombak menjadi:
+  - **Tandatangani**: Persiapan antarmuka untuk Fase 3 (Enkripsi RSA).
+  - **Cek Keaslian**: Persiapan antarmuka untuk Fase 2 dan Fase 4 (Deteksi AI & Verifikasi Integritas).
+
+## 3. Integrasi Firebase Authentication (Login & Register)
+- Konfigurasi `google-services.json` telah ditambahkan untuk menghubungkan aplikasi ke server Firebase milik pengguna.
+- Sistem *Credential Manager* (teknologi resmi terbaru Google untuk Android 14+) digunakan untuk **Google Sign-In**, menghadirkan pengalaman masuk satu ketukan (One-Tap Login) yang sangat aman dan modern.
+- Dibuat `LoginScreen` baru dengan dua opsi: Masuk via Email/Password atau via Akun Google.
+- Alur aplikasi diatur ulang: *Splash Screen* akan mengecek sesi otentikasi. Jika belum *login*, diarahkan ke `LoginScreen`. Jika sudah, masuk ke `DashboardScreen`.
+- Tombol *Keluar* (*Logout*) disematkan di menu Pengaturan (*Settings*), lengkap dengan tampilan nama email pengguna yang sedang aktif.
+
+## Verifikasi
+- ✅ `assembleDebug` — BUILD SUCCESSFUL
+- ✅ Dependensi iText7 dan Firebase Auth diunduh dan dikompilasi tanpa *error*.
+- ✅ `google-services.json` valid dan diterima oleh *plugin* Google Services.
