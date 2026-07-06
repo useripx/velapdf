@@ -10,6 +10,7 @@ import android.widget.Toast
 import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
 import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -61,6 +62,8 @@ import kotlinx.coroutines.withContext
 fun ImageToPdfScreen(
     onNavigateBack: () -> Unit,
     onConversionSuccess: ((String) -> Unit)? = null,
+    onNavigateToEdit: ((Uri) -> Unit)? = null,
+    updatedImage: Pair<Uri, Uri>? = null,
     viewModel: ImageToPdfViewModel = hiltViewModel()
 ) {
     var selectedImages by remember { mutableStateOf(emptyList<SelectedImage>()) }
@@ -77,6 +80,19 @@ fun ImageToPdfScreen(
 
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(updatedImage) {
+        if (updatedImage != null) {
+            val (originalUri, newUri) = updatedImage
+            val index = selectedImages.indexOfFirst { it.cachedUri == originalUri }
+            if (index != -1) {
+                val newList = selectedImages.toMutableList()
+                val oldImage = newList[index]
+                newList[index] = oldImage.copy(cachedUri = newUri)
+                selectedImages = newList
+            }
+        }
+    }
 
     val maxSelection = 50
     val multiplePhotoPickerLauncher = rememberLauncherForActivityResult(
@@ -311,89 +327,95 @@ fun ImageToPdfScreen(
                     .padding(horizontal = 16.dp, vertical = 24.dp)
             ) {
                 // Hero
-                Text(
-                    text = "Image to PDF",
-                    style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
-                    color = MaterialTheme.colorScheme.primary
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Convert your photos, screenshots, and scans into professional PDF documents in seconds.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-
-                // Upload and Camera Buttons area
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 32.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Button(
-                        onClick = {
-                            multiplePhotoPickerLauncher.launch(
-                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                            )
-                        },
-                        enabled = !isConverting,
-                        modifier = Modifier.height(56.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary
-                        ),
-                        shape = CircleShape
-                    ) {
-                        Icon(imageVector = Icons.Default.Image, contentDescription = "Upload Image")
-                        Spacer(modifier = Modifier.width(8.dp))
+                AnimatedVisibility(visible = selectedImages.isEmpty()) {
+                    Column {
                         Text(
-                            text = "Upload Image",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
+                            text = "Image to PDF",
+                            style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+                            color = MaterialTheme.colorScheme.primary
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Text(
+                            text = "Convert your photos, screenshots, and scans into professional PDF documents in seconds.",
+                            style = MaterialTheme.typography.bodyLarge,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    Button(
-                        onClick = {
-                            val options = GmsDocumentScannerOptions.Builder()
-                                .setGalleryImportAllowed(false)
-                                .setPageLimit(50)
-                                .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
-                                .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
-                                .build()
-                            
-                            val scanner = GmsDocumentScanning.getClient(options)
-                            context.findActivity()?.let { activity ->
-                                scanner.getStartScanIntent(activity)
-                                    .addOnSuccessListener { intentSender ->
-                                        scannerLauncher.launch(
-                                            IntentSenderRequest.Builder(intentSender).build()
-                                        )
-                                    }
-                                    .addOnFailureListener { e ->
-                                        Toast.makeText(context, "Gagal memulai kamera cerdas: ${e.message}", Toast.LENGTH_SHORT).show()
-                                    }
-                            } ?: run {
-                                Toast.makeText(context, "Konteks aplikasi tidak valid", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        enabled = !isConverting,
-                        modifier = Modifier.height(56.dp),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = MaterialTheme.colorScheme.secondary,
-                            contentColor = MaterialTheme.colorScheme.onSecondary
-                        ),
-                        shape = CircleShape
+                }
+
+                // Upload and Camera Buttons area
+                AnimatedVisibility(visible = selectedImages.isEmpty()) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 32.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Icon(imageVector = Icons.Default.CameraAlt, contentDescription = "Kamera")
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = "Kamera",
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        )
+                        Button(
+                            onClick = {
+                                multiplePhotoPickerLauncher.launch(
+                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                                )
+                            },
+                            enabled = !isConverting,
+                            modifier = Modifier.height(56.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.primary,
+                                contentColor = MaterialTheme.colorScheme.onPrimary
+                            ),
+                            shape = CircleShape
+                        ) {
+                            Icon(imageVector = Icons.Default.Image, contentDescription = "Upload Image")
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Upload Image",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
+                        
+                        Spacer(modifier = Modifier.height(16.dp))
+                        
+                        Button(
+                            onClick = {
+                                val options = GmsDocumentScannerOptions.Builder()
+                                    .setGalleryImportAllowed(false)
+                                    .setPageLimit(50)
+                                    .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+                                    .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_FULL)
+                                    .build()
+                                
+                                val scanner = GmsDocumentScanning.getClient(options)
+                                context.findActivity()?.let { activity ->
+                                    scanner.getStartScanIntent(activity)
+                                        .addOnSuccessListener { intentSender ->
+                                            scannerLauncher.launch(
+                                                IntentSenderRequest.Builder(intentSender).build()
+                                            )
+                                        }
+                                        .addOnFailureListener { e ->
+                                            Toast.makeText(context, "Gagal memulai kamera cerdas: ${e.message}", Toast.LENGTH_SHORT).show()
+                                        }
+                                } ?: run {
+                                    Toast.makeText(context, "Konteks aplikasi tidak valid", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            enabled = !isConverting,
+                            modifier = Modifier.height(56.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = MaterialTheme.colorScheme.secondary,
+                                contentColor = MaterialTheme.colorScheme.onSecondary
+                            ),
+                            shape = CircleShape
+                        ) {
+                            Icon(imageVector = Icons.Default.CameraAlt, contentDescription = "Kamera")
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "Kamera",
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        }
                     }
                 }
 
@@ -424,7 +446,10 @@ fun ImageToPdfScreen(
                     Box(modifier = Modifier.weight(1f)) {
                         SortableImageGrid(
                             selectedImages = selectedImages,
-                            onImagesUpdated = { newImages -> selectedImages = newImages }
+                            onImagesUpdated = { newImages -> selectedImages = newImages },
+                            onEdit = { image ->
+                                onNavigateToEdit?.invoke(image.cachedUri)
+                            }
                         )
                     }
                 } else {

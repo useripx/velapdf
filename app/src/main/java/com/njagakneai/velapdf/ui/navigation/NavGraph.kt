@@ -106,6 +106,9 @@ fun AppNavigation(
                 },
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
+                },
+                onNavigateToEditImage = { imageUri ->
+                    navController.navigate(Screen.EditImage.createRoute(Uri.encode(imageUri.toString())))
                 }
             )
         }
@@ -116,7 +119,19 @@ fun AppNavigation(
             exitTransition = { fadeOut(animationSpec = tween(300)) },
             popEnterTransition = { fadeIn(animationSpec = tween(300)) },
             popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, animationSpec = tween(300)) }
-        ) {
+        ) { backStackEntry ->
+            val updatedOriginalUriStr = backStackEntry.savedStateHandle.get<String>("updated_uri_original")
+            val updatedNewUriStr = backStackEntry.savedStateHandle.get<String>("updated_uri_new")
+            val updatedImage = if (updatedOriginalUriStr != null && updatedNewUriStr != null) {
+                Pair(Uri.parse(updatedOriginalUriStr), Uri.parse(updatedNewUriStr))
+            } else null
+
+            // Clear the saved state after reading it to avoid stale updates
+            if (updatedImage != null) {
+                backStackEntry.savedStateHandle.remove<String>("updated_uri_original")
+                backStackEntry.savedStateHandle.remove<String>("updated_uri_new")
+            }
+
             com.njagakneai.velapdf.ui.screen.ImageToPdfScreen(
                 onNavigateBack = {
                     navController.popBackStack()
@@ -125,7 +140,11 @@ fun AppNavigation(
                     navController.navigate(Screen.Success.createRoute(encodedUri)) {
                         popUpTo(Screen.ImageToPdf.route) { inclusive = true }
                     }
-                }
+                },
+                onNavigateToEdit = { imageUri ->
+                    navController.navigate(Screen.EditImage.createRoute(Uri.encode(imageUri.toString())))
+                },
+                updatedImage = updatedImage
             )
         }
 
@@ -224,6 +243,27 @@ fun AppNavigation(
         }
 
         composable(
+            route = Screen.EditImage.route,
+            arguments = listOf(androidx.navigation.navArgument("imageUri") { type = androidx.navigation.NavType.StringType }),
+            enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, animationSpec = tween(300)) },
+            exitTransition = { fadeOut(animationSpec = tween(300)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(300)) },
+            popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, animationSpec = tween(300)) }
+        ) { backStackEntry ->
+            val imageUriStr = backStackEntry.arguments?.getString("imageUri") ?: ""
+            val imageUri = Uri.parse(Uri.decode(imageUriStr))
+            com.njagakneai.velapdf.ui.screen.EditImageScreen(
+                imageUri = imageUri,
+                onNavigateBack = { navController.popBackStack() },
+                onSaveSuccess = { originalUri, newUri ->
+                    navController.previousBackStackEntry?.savedStateHandle?.set("updated_uri_original", originalUri.toString())
+                    navController.previousBackStackEntry?.savedStateHandle?.set("updated_uri_new", newUri.toString())
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
             route = Screen.Success.route,
             arguments = listOf(androidx.navigation.navArgument("uri") { type = androidx.navigation.NavType.StringType }),
             enterTransition = { fadeIn(animationSpec = tween(400)) },
@@ -253,6 +293,9 @@ sealed class Screen(val route: String) {
     object History : Screen("history")
     object Settings : Screen("settings")
     object Converter : Screen("converter")
+    object EditImage : Screen("edit_image/{imageUri}") {
+        fun createRoute(imageUri: String) = "edit_image/$imageUri"
+    }
     object Success : Screen("success/{uri}") {
         fun createRoute(uri: String) = "success/$uri"
     }
