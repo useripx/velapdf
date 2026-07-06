@@ -4,7 +4,12 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
-import android.graphics.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfWriter
+import com.itextpdf.layout.Document
+import com.itextpdf.layout.element.Image
+import com.itextpdf.io.image.ImageDataFactory
+import com.itextpdf.kernel.geom.PageSize
 import com.njagakneai.velapdf.data.model.SelectedImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -24,7 +29,10 @@ object PdfGenerator {
     ): File = withContext(Dispatchers.IO) {
         if (images.isEmpty()) throw IllegalArgumentException("No images to convert")
 
-        val pdfDocument = PdfDocument()
+        val pdfWriter = PdfWriter(outputFile)
+        val pdfDocument = PdfDocument(pdfWriter)
+        val document = Document(pdfDocument)
+        document.setMargins(0f, 0f, 0f, 0f)
 
         try {
             images.forEachIndexed { index, selectedImage ->
@@ -47,29 +55,22 @@ object PdfGenerator {
                 bitmap.recycle() // free memory of intermediate bitmap
                 
                 val compressedArray = baos.toByteArray()
-                bitmap = BitmapFactory.decodeByteArray(compressedArray, 0, compressedArray.size)
                 
-                val pageInfo = PdfDocument.PageInfo.Builder(bitmap.width, bitmap.height, index + 1).create()
-                val page = pdfDocument.startPage(pageInfo)
+                val imageData = ImageDataFactory.create(compressedArray)
+                val pdfImage = Image(imageData)
                 
-                val canvas = page.canvas
-                canvas.drawBitmap(bitmap, 0f, 0f, null)
-                pdfDocument.finishPage(page)
+                val pageSize = PageSize(pdfImage.imageWidth, pdfImage.imageHeight)
+                pdfDocument.addNewPage(pageSize)
                 
-                bitmap.recycle()
+                pdfImage.setFixedPosition(index + 1, 0f, 0f)
+                document.add(pdfImage)
                 
                 val progress = ((index + 1) * 100) / images.size
                 onProgress(progress)
             }
-            
-            val outputStream = FileOutputStream(outputFile)
-            pdfDocument.writeTo(outputStream)
-            outputStream.flush()
-            outputStream.close()
-            
             outputFile
         } finally {
-            pdfDocument.close()
+            document.close()
         }
     }
     

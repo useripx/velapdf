@@ -54,8 +54,35 @@ Memberikan *feedback* kepada pengguna dan menyimpan *file* di tempat yang benar.
 
 ## PARAMETER PENYELESAIAN (Definition of Done)
 AI Agent dianggap telah menyelesaikan Fase 1 Tahap 1 jika kondisi berikut terpenuhi:
-- [ ] Pengguna bisa memilih gambar dari galeri atau kamera tanpa *crash*.
-- [ ] Gambar berhasil dikompres dan tidak menyebabkan *Out of Memory* saat diproses.
-- [ ] *File* PDF berhasil terbuat di penyimpanan *smartphone*.
-- [ ] Gambar di dalam PDF terlihat proporsional (tidak terpotong atau gepeng).
-- [ ] Seluruh proses berat memblokir input UI dengan *Loading Bar* (berjalan *Asynchronous*).
+- [x] Pengguna bisa memilih gambar dari galeri atau kamera tanpa *crash*.
+- [x] Gambar berhasil dikompres dan tidak menyebabkan *Out of Memory* saat diproses.
+- [x] *File* PDF berhasil terbuat di penyimpanan *smartphone*.
+- [x] Gambar di dalam PDF terlihat proporsional (tidak terpotong atau gepeng).
+- [x] Seluruh proses berat memblokir input UI dengan *Loading Bar* (berjalan *Asynchronous*).
+
+---
+
+## DETAIL LANGKAH KERJA (FASE 1 - TAHAP 2: Integrasi Firebase & Pembaruan UI)
+
+### Langkah 2.1: Setup Firebase & Credential Manager
+Mengintegrasikan Firebase Authentication dan Google Sign-in untuk identitas pengguna.
+* **Tugas:**
+    - [x] Tambahkan dependensi `google-services`, `firebase-auth`, dan `androidx.credentials`.
+    - [x] Konfigurasi `google-services.json` dan daftarkan SHA-1 aplikasi di Firebase Console.
+    - [x] Buat file `strings.xml` untuk menyimpan `google_web_client_id`.
+
+### Langkah 2.2: Pembuatan UI/UX Baru
+Mengubah antarmuka aplikasi untuk mengakomodasi fitur keamanan.
+* **Tugas:**
+    - [x] Ganti kartu "Word to PDF" dan "Excel to PDF" di `DashboardScreen` menjadi "Tandatangani" dan "Cek Keaslian" (Status: Tahap Pengembangan).
+    - [x] Perbaiki *color palette* untuk *Light Theme* agar kontras teks pada kontainer terbaca jelas.
+    - [x] Buat layar `LoginScreen.kt` dengan integrasi Credential Manager.
+    - [x] Tambahkan tampilan detail akun dan tombol *Logout* di layar `SettingsScreen`.
+
+### Langkah 2.3: Pembaruan Navigasi & Alur Aplikasi
+* **Tugas:**
+    - [x] Implementasi pemeriksaan sesi pada `SplashViewModel`.
+    - [x] Mengarahkan pengguna yang belum *login* ke layar *Login*, dan yang sudah *login* ke `Dashboard`.
+
+## STATUS FASE 1:
+**SELESAI 100%** (Siap melanjutkan ke Fase 2: Pembuatan AI)

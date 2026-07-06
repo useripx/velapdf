@@ -11,6 +11,13 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
 import java.util.UUID
+import com.njagakneai.velapdf.data.model.EditOutputFormat
+import com.itextpdf.kernel.pdf.PdfDocument
+import com.itextpdf.kernel.pdf.PdfWriter
+import com.itextpdf.layout.Document
+import com.itextpdf.layout.element.Image
+import com.itextpdf.io.image.ImageDataFactory
+import com.itextpdf.kernel.geom.PageSize
 
 object BitmapProcessor {
 
@@ -52,5 +59,55 @@ object BitmapProcessor {
         val byteArray = stream.toByteArray()
         bitmap.recycle()
         return@withContext byteArray
+    }
+
+    suspend fun saveBitmapAs(context: Context, bitmap: Bitmap, format: EditOutputFormat, fileName: String): Uri? = withContext(Dispatchers.IO) {
+        try {
+            val cacheFile = File(context.cacheDir, "$fileName.${format.extension}")
+            FileOutputStream(cacheFile).use { out ->
+                val compressFormat = when (format) {
+                    EditOutputFormat.PNG -> Bitmap.CompressFormat.PNG
+                    EditOutputFormat.WEBP -> if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R) {
+                        Bitmap.CompressFormat.WEBP_LOSSLESS
+                    } else {
+                        Bitmap.CompressFormat.WEBP
+                    }
+                    else -> Bitmap.CompressFormat.JPEG
+                }
+                val quality = if (format == EditOutputFormat.PNG) 100 else 90
+                bitmap.compress(compressFormat, quality, out)
+            }
+            return@withContext Uri.fromFile(cacheFile)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return@withContext null
+        }
+    }
+
+    suspend fun saveBitmapAsPdf(context: Context, bitmap: Bitmap, fileName: String): Uri? = withContext(Dispatchers.IO) {
+        try {
+            val cacheFile = File(context.cacheDir, "$fileName.pdf")
+            val pdfWriter = PdfWriter(cacheFile)
+            val pdfDocument = PdfDocument(pdfWriter)
+            val document = Document(pdfDocument)
+            document.setMargins(0f, 0f, 0f, 0f)
+
+            val stream = ByteArrayOutputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
+            val imageData = ImageDataFactory.create(stream.toByteArray())
+            val pdfImage = Image(imageData)
+            
+            val pageSize = PageSize(pdfImage.imageWidth, pdfImage.imageHeight)
+            pdfDocument.addNewPage(pageSize)
+            
+            pdfImage.setFixedPosition(1, 0f, 0f)
+            document.add(pdfImage)
+            document.close()
+            
+            return@withContext Uri.fromFile(cacheFile)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return@withContext null
+        }
     }
 }

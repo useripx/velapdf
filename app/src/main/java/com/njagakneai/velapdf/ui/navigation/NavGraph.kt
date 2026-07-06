@@ -12,6 +12,8 @@ import com.njagakneai.velapdf.ui.screen.MergePdfScreen
 import com.njagakneai.velapdf.ui.screen.PermissionsScreen
 import com.njagakneai.velapdf.ui.screen.SplashScreen
 import com.njagakneai.velapdf.ui.screen.HistoryScreen
+import com.njagakneai.velapdf.ui.screen.LoginScreen
+import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -49,8 +51,24 @@ fun AppNavigation(
         ) {
             PermissionsScreen(
                 onPermissionsGranted = {
-                    navController.navigate(Screen.Dashboard.route) {
+                    val isLoggedIn = FirebaseAuth.getInstance().currentUser != null
+                    val destination = if (isLoggedIn) Screen.Dashboard.route else Screen.Login.route
+                    navController.navigate(destination) {
                         popUpTo(Screen.Permissions.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        composable(
+            route = Screen.Login.route,
+            enterTransition = { fadeIn(animationSpec = tween(300)) },
+            exitTransition = { fadeOut(animationSpec = tween(300)) }
+        ) {
+            LoginScreen(
+                onNavigateToDashboard = {
+                    navController.navigate(Screen.Dashboard.route) {
+                        popUpTo(Screen.Login.route) { inclusive = true }
                     }
                 }
             )
@@ -88,6 +106,9 @@ fun AppNavigation(
                 },
                 onNavigateToSettings = {
                     navController.navigate(Screen.Settings.route)
+                },
+                onNavigateToEditImage = { imageUri ->
+                    navController.navigate(Screen.EditImage.createRoute(Uri.encode(imageUri.toString())))
                 }
             )
         }
@@ -98,7 +119,19 @@ fun AppNavigation(
             exitTransition = { fadeOut(animationSpec = tween(300)) },
             popEnterTransition = { fadeIn(animationSpec = tween(300)) },
             popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Right, animationSpec = tween(300)) }
-        ) {
+        ) { backStackEntry ->
+            val updatedOriginalUriStr = backStackEntry.savedStateHandle.get<String>("updated_uri_original")
+            val updatedNewUriStr = backStackEntry.savedStateHandle.get<String>("updated_uri_new")
+            val updatedImage = if (updatedOriginalUriStr != null && updatedNewUriStr != null) {
+                Pair(Uri.parse(updatedOriginalUriStr), Uri.parse(updatedNewUriStr))
+            } else null
+
+            // Clear the saved state after reading it to avoid stale updates
+            if (updatedImage != null) {
+                backStackEntry.savedStateHandle.remove<String>("updated_uri_original")
+                backStackEntry.savedStateHandle.remove<String>("updated_uri_new")
+            }
+
             com.njagakneai.velapdf.ui.screen.ImageToPdfScreen(
                 onNavigateBack = {
                     navController.popBackStack()
@@ -107,7 +140,11 @@ fun AppNavigation(
                     navController.navigate(Screen.Success.createRoute(encodedUri)) {
                         popUpTo(Screen.ImageToPdf.route) { inclusive = true }
                     }
-                }
+                },
+                onNavigateToEdit = { imageUri ->
+                    navController.navigate(Screen.EditImage.createRoute(Uri.encode(imageUri.toString())))
+                },
+                updatedImage = updatedImage
             )
         }
 
@@ -173,7 +210,14 @@ fun AppNavigation(
         ) {
             SettingsScreen(
                 onNavigateBack = {
-                    navController.popBackStack()
+                    val isLoggedIn = FirebaseAuth.getInstance().currentUser != null
+                    if (!isLoggedIn) {
+                        navController.navigate(Screen.Login.route) {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    } else {
+                        navController.popBackStack()
+                    }
                 }
             )
         }
@@ -193,6 +237,27 @@ fun AppNavigation(
                     }
                 },
                 onError = {
+                    navController.popBackStack()
+                }
+            )
+        }
+
+        composable(
+            route = Screen.EditImage.route,
+            arguments = listOf(androidx.navigation.navArgument("imageUri") { type = androidx.navigation.NavType.StringType }),
+            enterTransition = { slideIntoContainer(AnimatedContentTransitionScope.SlideDirection.Up, animationSpec = tween(300)) },
+            exitTransition = { fadeOut(animationSpec = tween(300)) },
+            popEnterTransition = { fadeIn(animationSpec = tween(300)) },
+            popExitTransition = { slideOutOfContainer(AnimatedContentTransitionScope.SlideDirection.Down, animationSpec = tween(300)) }
+        ) { backStackEntry ->
+            val imageUriStr = backStackEntry.arguments?.getString("imageUri") ?: ""
+            val imageUri = Uri.parse(Uri.decode(imageUriStr))
+            com.njagakneai.velapdf.ui.screen.EditImageScreen(
+                imageUri = imageUri,
+                onNavigateBack = { navController.popBackStack() },
+                onSaveSuccess = { originalUri, newUri ->
+                    navController.previousBackStackEntry?.savedStateHandle?.set("updated_uri_original", originalUri.toString())
+                    navController.previousBackStackEntry?.savedStateHandle?.set("updated_uri_new", newUri.toString())
                     navController.popBackStack()
                 }
             )
@@ -220,6 +285,7 @@ fun AppNavigation(
 sealed class Screen(val route: String) {
     object Splash : Screen("splash")
     object Permissions : Screen("permissions")
+    object Login : Screen("login")
     object Dashboard : Screen("dashboard")
     object ImageToPdf : Screen("image_to_pdf")
     object MergePdf : Screen("merge_pdf")
@@ -227,6 +293,9 @@ sealed class Screen(val route: String) {
     object History : Screen("history")
     object Settings : Screen("settings")
     object Converter : Screen("converter")
+    object EditImage : Screen("edit_image/{imageUri}") {
+        fun createRoute(imageUri: String) = "edit_image/$imageUri"
+    }
     object Success : Screen("success/{uri}") {
         fun createRoute(uri: String) = "success/$uri"
     }

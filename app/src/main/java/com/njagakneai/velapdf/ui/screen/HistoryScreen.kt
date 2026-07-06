@@ -70,14 +70,21 @@ fun HistoryItemCard(item: HistoryEntity) {
             .fillMaxWidth()
             .clickable {
                 val uri = Uri.parse(item.filePath)
+                val mimeType = when {
+                    item.fileName.endsWith(".pdf", ignoreCase = true) -> "application/pdf"
+                    item.fileName.endsWith(".jpg", ignoreCase = true) || item.fileName.endsWith(".jpeg", ignoreCase = true) -> "image/jpeg"
+                    item.fileName.endsWith(".png", ignoreCase = true) -> "image/png"
+                    item.fileName.endsWith(".webp", ignoreCase = true) -> "image/webp"
+                    else -> "*/*"
+                }
                 val intent = Intent(Intent.ACTION_VIEW).apply {
-                    setDataAndType(uri, "application/pdf")
+                    setDataAndType(uri, mimeType)
                     addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 }
                 try {
                     context.startActivity(intent)
                 } catch (e: ActivityNotFoundException) {
-                    Toast.makeText(context, "Tidak ada aplikasi pembaca PDF", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(context, "Tidak ada aplikasi untuk membuka file ini", Toast.LENGTH_SHORT).show()
                 }
             },
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)

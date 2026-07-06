@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.input.KeyboardType
+import com.google.firebase.auth.FirebaseAuth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.njagakneai.velapdf.ui.viewmodel.SettingsViewModel
@@ -61,6 +62,47 @@ fun SettingsScreen(
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            val auth = FirebaseAuth.getInstance()
+            val currentUser = auth.currentUser
+
+            if (currentUser != null) {
+                // Akun Pengguna
+                item {
+                    Text(
+                        text = "Akun Pengguna",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(imageVector = Icons.Default.Person, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column {
+                                Text(text = currentUser.email ?: "Pengguna Google", style = MaterialTheme.typography.bodyLarge)
+                                Text(text = "Masuk sebagai", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                        TextButton(onClick = {
+                            auth.signOut()
+                            onNavigateBack() // this might need to go to Splash instead, but since we are in Settings, popBackStack will go to Dashboard, which might be stale. We can let Dashboard or Splash handle it. Or just exit the app.
+                            // To properly handle sign out, we can restart the app or navigate to Splash. We will pass a callback onLogout
+                        }) {
+                            Text("Keluar", color = MaterialTheme.colorScheme.error)
+                        }
+                    }
+                }
+                
+                item { HorizontalDivider() }
+            }
+
             // Preferensi Aplikasi
             item {
                 Text(

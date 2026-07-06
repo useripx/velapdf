@@ -15,6 +15,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.Refresh
@@ -40,7 +41,8 @@ fun SortableImageGrid(
     selectedImages: List<SelectedImage>,
     onImagesUpdated: (List<SelectedImage>) -> Unit,
     modifier: Modifier = Modifier,
-    maxSelection: Int = 50
+    maxSelection: Int = 50,
+    onEdit: ((SelectedImage) -> Unit)? = null
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
@@ -95,11 +97,11 @@ fun SortableImageGrid(
         }
 
         LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 100.dp),
+            columns = GridCells.Fixed(3),
             contentPadding = PaddingValues(8.dp),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize().heightIn(min = 200.dp)
         ) {
             itemsIndexed(selectedImages) { index, image ->
                 SortableImageItem(
@@ -135,6 +137,9 @@ fun SortableImageGrid(
                             updatedList[index + 1] = temp
                             onImagesUpdated(updatedList)
                         }
+                    },
+                    onEdit = {
+                        onEdit?.invoke(image)
                     }
                 )
             }
@@ -183,7 +188,8 @@ fun SortableImageItem(
     onRemove: () -> Unit,
     onRotate: () -> Unit,
     onMoveUp: () -> Unit,
-    onMoveDown: () -> Unit
+    onMoveDown: () -> Unit,
+    onEdit: (() -> Unit)? = null
 ) {
     Box(
         modifier = Modifier
@@ -242,32 +248,44 @@ fun SortableImageItem(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .background(Color.Black.copy(alpha = 0.5f))
-                .padding(horizontal = 4.dp, vertical = 2.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .padding(vertical = 2.dp),
+            horizontalArrangement = Arrangement.SpaceEvenly,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Row {
+            IconButton(
+                onClick = onMoveUp,
+                enabled = index > 0,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowUp,
+                    contentDescription = "Pindah Atas",
+                    tint = if (index > 0) Color.White else Color.Gray,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+            IconButton(
+                onClick = onMoveDown,
+                enabled = index < totalItems - 1,
+                modifier = Modifier.size(24.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowDown,
+                    contentDescription = "Pindah Bawah",
+                    tint = if (index < totalItems - 1) Color.White else Color.Gray,
+                    modifier = Modifier.size(18.dp)
+                )
+            }
+
+            if (onEdit != null) {
                 IconButton(
-                    onClick = onMoveUp,
-                    enabled = index > 0,
+                    onClick = onEdit,
                     modifier = Modifier.size(24.dp)
                 ) {
                     Icon(
-                        imageVector = Icons.Default.KeyboardArrowUp,
-                        contentDescription = "Pindah Atas",
-                        tint = if (index > 0) Color.White else Color.Gray,
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-                IconButton(
-                    onClick = onMoveDown,
-                    enabled = index < totalItems - 1,
-                    modifier = Modifier.size(24.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowDown,
-                        contentDescription = "Pindah Bawah",
-                        tint = if (index < totalItems - 1) Color.White else Color.Gray,
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Edit",
+                        tint = Color.White,
                         modifier = Modifier.size(18.dp)
                     )
                 }

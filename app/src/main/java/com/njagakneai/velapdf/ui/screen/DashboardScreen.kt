@@ -15,12 +15,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.automirrored.filled.MergeType
 import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.DocumentScanner
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.result.IntentSenderRequest
+import com.google.mlkit.vision.documentscanner.GmsDocumentScannerOptions
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanning
+import com.google.mlkit.vision.documentscanner.GmsDocumentScanningResult
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.filled.Home
@@ -55,7 +62,8 @@ fun DashboardScreen(
     onNavigateToMergePdf: () -> Unit = {},
     onNavigateToPdfToImage: () -> Unit = {},
     onNavigateToHistory: () -> Unit = {},
-    onNavigateToSettings: () -> Unit = {}
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToEditImage: (Uri) -> Unit = {}
 ) {
     val context = LocalContext.current
     var showPermissionDialog by remember { mutableStateOf(!PermissionHelper.hasStoragePermission(context)) }
@@ -95,6 +103,17 @@ fun DashboardScreen(
                 showPermissionDialog = false
             }
         )
+    }
+
+    val scannerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartIntentSenderForResult()
+    ) { result ->
+        if (result.resultCode == android.app.Activity.RESULT_OK) {
+            val scanResult = GmsDocumentScanningResult.fromActivityResultIntent(result.data)
+            scanResult?.pages?.firstOrNull()?.imageUri?.let { newUri ->
+                onNavigateToEditImage(newUri)
+            }
+        }
     }
 
     ModalNavigationDrawer(
@@ -250,14 +269,26 @@ fun DashboardScreen(
                     )
                     NavigationBarItem(
                         selected = false,
-                        onClick = { onNavigateToHistory() },
+                        onClick = {
+                            val options = GmsDocumentScannerOptions.Builder()
+                                .setGalleryImportAllowed(true)
+                                .setPageLimit(1)
+                                .setResultFormats(GmsDocumentScannerOptions.RESULT_FORMAT_JPEG)
+                                .setScannerMode(GmsDocumentScannerOptions.SCANNER_MODE_BASE_WITH_FILTER)
+                                .build()
+                            val scanner = GmsDocumentScanning.getClient(options)
+                            scanner.getStartScanIntent(context as android.app.Activity)
+                                .addOnSuccessListener { intentSender ->
+                                    scannerLauncher.launch(IntentSenderRequest.Builder(intentSender).build())
+                                }
+                        },
                         icon = {
                             Icon(
-                                imageVector = Icons.Default.Image,
-                                contentDescription = "Files"
+                                imageVector = Icons.Default.DocumentScanner,
+                                contentDescription = "Edit Foto"
                             )
                         },
-                        label = { Text("Files") }
+                        label = { Text("Edit Foto") }
                     )
                     NavigationBarItem(
                         selected = false,
@@ -526,17 +557,17 @@ fun DashboardScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                // Coming Soon Cards
+                // Coming Soon Cards (Fitur Keamanan Fase Selanjutnya)
                 ComingSoonCard(
-                    title = "Word to PDF",
-                    description = "Preserve formatting and fonts perfectly.",
-                    icon = Icons.Default.Edit
+                    title = "Tandatangani",
+                    description = "Amankan dokumen Anda dengan tanda tangan digital tersertifikasi dan kriptografi RSA & SHA-256.",
+                    icon = Icons.Default.Lock
                 )
                 Spacer(modifier = Modifier.height(16.dp))
                 ComingSoonCard(
-                    title = "Excel to PDF",
-                    description = "Convert spreadsheets into structured tables.",
-                    icon = Icons.Default.DateRange
+                    title = "Cek Keaslian",
+                    description = "Verifikasi keaslian dokumen PDF dan deteksi manipulasi gambar menggunakan AI.",
+                    icon = Icons.Default.CheckCircle
                 )
 
                 Spacer(modifier = Modifier.height(32.dp))
